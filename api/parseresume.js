@@ -6,7 +6,14 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    const { base64data } = req.body
+    const { base64data, fileName, fileType } = req.body
+
+    console.log('[api/parseresume] base64data received:', !!base64data)
+    console.log('[api/parseresume] base64data length:', base64data?.length ?? 0)
+    console.log('[api/parseresume] inferred file size (bytes):', Math.round((base64data?.length ?? 0) * 0.75))
+    console.log('[api/parseresume] fileName:', fileName ?? 'unknown')
+    console.log('[api/parseresume] fileType:', fileType ?? 'unknown')
+
     if (!base64data) {
       return res.status(400).json({ error: 'base64data is required' })
     }

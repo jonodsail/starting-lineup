@@ -1,7 +1,65 @@
 // ─── Sports Business Job Board — Static Listings ────────────────────────────
 // 70 realistic roles across all 13 sectors, posted within the last 30 days.
+// Real scraped listings from Teamwork Online are merged in at the bottom.
 
-export const jobs = [
+import realJobsRaw from './realJobs.json'
+
+// ── Sector inference (for real jobs) ─────────────────────────────────────────
+const SECTOR_RULES = [
+  // Facilities must come before sports-tech so "Maintenance Technician" → facilities, not tech
+  [/facil|arena|venue|stadium|mainten|food|beverage|culinary|chef|cook|custod|electrician|paramedic|labor|changeover/i, 'facilities-infrastructure'],
+  [/ticket|box.office|fan.experi/i,                                          'ticketing-fan-experience'],
+  [/media|broadcast|video|podcast|film|stream/i,                             'media-broadcasting'],
+  [/sponsor|partner|activat|endors/i,                                        'sponsorship-endorsements'],
+  [/market|brand|commerc|sales/i,                                            'sponsorship-endorsements'],
+  [/analyt|data|insight|software|engineer|developer|platform|digital|tech/i, 'sports-tech-analytics'],
+  [/apparel|equipment|merchandis|gear|footwear/i,                            'apparel-equipment'],
+  [/health|wellness|medic|trainer|physio|nutrition|recovery/i,               'health-wellness'],
+  [/agent|agenc|talent.management|\bnil\b/i,                                 'athlete-agencies'],
+  [/bet|gaming|fantasy|wager/i,                                              'betting-gaming'],
+  [/youth|camp|coach/i,                                                      'youth-sports'],
+  [/invest|venture|fund/i,                                                   'athlete-ventures'],
+  [/league|federation|governing/i,                                           'leagues'],
+]
+
+function inferSector(title) {
+  for (const [re, sector] of SECTOR_RULES) {
+    if (re.test(title)) return sector
+  }
+  return 'teams-franchises'
+}
+
+function inferLevel(title) {
+  const t = title.toLowerCase()
+  if (/\bvp\b|vice.presid|\bdirector\b|\bchief\b|head of|\bpresident\b/.test(t)) return 'Senior'
+  if (/\bsenior\b|\bsr\.?\b/.test(t)) return 'Senior'
+  if (/\bmanager\b|\bsupervisor\b/.test(t)) return 'Mid'
+  if (/coordinator|assistant|\bassociate\b|specialist|\bintern\b/.test(t)) return 'Entry'
+  return 'Entry'
+}
+
+function inferType(scrapedBadge) {
+  if (/intern/i.test(scrapedBadge)) return 'Internship'
+  if (/part.time/i.test(scrapedBadge)) return 'Part-Time'
+  return 'Full-Time'
+}
+
+const realJobs = realJobsRaw.jobs.map((j, i) => ({
+  id:          `real-${i + 1}`,
+  title:       j.title,
+  company:     j.company || 'Sports Organization',
+  location:    j.location || '',
+  sector:      inferSector(j.title),
+  type:        inferType(j.type || ''),
+  level:       inferLevel(j.title),
+  url:         j.url,
+  posted:      realJobsRaw.scrapedAt.slice(0, 10),
+  description: '',
+  isReal:      true,
+}))
+
+// ─── Synthetic listings ────────────────────────────────────────────────────────
+const syntheticJobs = [
 
   // ── Teams & Franchises ──────────────────────────────────────────────────────
   {
@@ -869,6 +927,9 @@ export const jobs = [
     url: 'https://www.dickssportinggoods.com/s/careers',
   },
 ]
+
+// Real jobs first so they surface above synthetic ones in scored lists
+export const jobs = [...realJobs, ...syntheticJobs]
 
 export const JOB_TYPES = ['Full-Time', 'Internship', 'Contract']
 export const JOB_LEVELS = ['Entry', 'Mid', 'Senior', 'Executive']

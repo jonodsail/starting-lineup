@@ -8,7 +8,15 @@
 
 body {
   margin: 0;
-  background-color: #0a0a0f;
-  color: #e0e0ff;
+  background-color: #080808;
+  color: #cccccc;
   font-family: 'IBM Plex Sans', sans-serif;
+}
+
+@layer utilities {
+  .field-bg {
+    background-color: #080808;
+    background-image: radial-gradient(circle, #222222 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }

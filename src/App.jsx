@@ -1,19 +1,20 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Onboarding from './pages/Onboarding'
+import Dashboard from './pages/Dashboard'
+import Jobs from './pages/Jobs'
 
-function Home() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <h1 className="font-display text-6xl text-accent tracking-widest">
-        Starting Lineup
-      </h1>
-    </div>
-  )
+function Root() {
+  const hasProfile = !!localStorage.getItem('sl_user_profile')
+  return <Navigate to={hasProfile ? '/dashboard' : '/onboarding'} replace />
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<Root />} />
+      <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/jobs" element={<Jobs />} />
     </Routes>
   )
 }

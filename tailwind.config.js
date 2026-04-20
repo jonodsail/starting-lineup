@@ -7,14 +7,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        void: '#0a0a0f',
-        surface: '#12121a',
-        border: '#1e1e2e',
-        muted: '#4a4a6a',
-        subtle: '#e0e0ff',
-        accent: '#00d4ff',
-        secondary: '#ff6b35',
-        purple: '#7c3aed',
+        background: '#080808',
+        surface: '#111111',
+        border: '#222222',
+        muted: '#555555',
+        subtle: '#cccccc',
+        accent: '#00ff87',
+        secondary: '#ffffff',
       },
       fontFamily: {
         display: ['"Bebas Neue"', 'sans-serif'],
