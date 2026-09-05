@@ -41,4 +41,4 @@ The browser and database each enforce the RC/EC domain allowlist. The database p
 
 The source alumni workbook is not committed, and no alumni names, employers, or profile URLs are bundled into this public repository. Import those records only into the private Supabase project. Future authorized emails belong in the protected `alumni_contacts` table and are available only to club officers.
 
-The opportunity records in this branch are pilot content for interface testing. Officers must verify a role and its live application path before launch.
+The opportunity records include a `verifiedOn` date and link to role-specific postings rather than general careers pages. Roles can close without notice, so officers should recheck every application path regularly and remove closed listings promptly.
