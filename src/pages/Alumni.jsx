@@ -7,7 +7,7 @@ import { opportunities } from '../data/opportunities'
 import { alumniSeed } from '../data/alumniSeed'
 import { loadAlumniDirectory } from '../lib/auth'
 
-const companyNames = [...new Set([
+const baseCompanyNames = [...new Set([
   ...ecosystemCompanies.map(company => company.name),
   ...opportunities.map(opportunity => opportunity.company),
 ])].sort((a, b) => a.localeCompare(b))
@@ -22,7 +22,7 @@ function isSameCompany(left, right) {
   return a === b || (Math.min(a.length, b.length) > 5 && (a.includes(b) || b.includes(a)))
 }
 
-function CompanyCombobox({ value, onChange }) {
+function CompanyCombobox({ value, onChange, companyNames }) {
   const listboxId = useId()
   const [input, setInput] = useState(value)
   const [open, setOpen] = useState(false)
@@ -35,7 +35,7 @@ function CompanyCombobox({ value, onChange }) {
       .filter(name => name.toLowerCase().includes(needle))
       .sort((a, b) => Number(!a.toLowerCase().startsWith(needle)) - Number(!b.toLowerCase().startsWith(needle)) || a.localeCompare(b))
       .slice(0, 8)
-  }, [input])
+  }, [companyNames, input])
 
   const selectCompany = (name) => {
     setInput(name)
@@ -111,6 +111,11 @@ export default function Alumni() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
+  const companyNames = useMemo(() => [...new Set([
+    ...baseCompanyNames,
+    ...alumni.map(person => person.company),
+  ].filter(Boolean))].sort((a, b) => a.localeCompare(b)), [alumni])
+
   useEffect(() => {
     let active = true
     loadAlumniDirectory()
@@ -138,7 +143,7 @@ export default function Alumni() {
     <PageHeader eyebrow="HBS network" title="Who do we know there?" description="Choose any organization in the sports ecosystem. Starting Lineup will show relevant HBS alumni and a broader LinkedIn search when the club directory has gaps." />
 
     <section className="panel relative z-10 p-5 md:p-6">
-      <CompanyCombobox key={selectedCompany} value={selectedCompany} onChange={selectCompany} />
+      <CompanyCombobox key={selectedCompany} value={selectedCompany} onChange={selectCompany} companyNames={companyNames} />
       {selectedCompany && <label className="relative mt-4 block"><span className="sr-only">Filter alumni by name or role</span><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" size={17} /><input className="input pl-10" value={peopleQuery} onChange={event => setPeopleQuery(event.target.value)} placeholder={`Filter people at ${selectedCompany} by name or role`} /></label>}
     </section>
 
@@ -146,7 +151,10 @@ export default function Alumni() {
 
     {loading && selectedCompany && <div className="mt-4 panel px-6 py-12 text-center text-sm text-ink-muted">Searching the private HBS alumni directory…</div>}
 
-    {!loading && selectedCompany && results.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{results.map(person => <article key={person.id} className="panel p-5"><div className="flex items-start justify-between gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-night text-xs font-bold text-white">{person.name.split(' ').map(part => part[0]).join('').slice(0, 2)}</span>{person.classYear && <span className="tag">HBS ’{person.classYear.slice(-2)}</span>}</div><h2 className="mt-4 font-bold text-night">{person.name}</h2><p className="mt-1 text-sm leading-5 text-ink-muted">{person.title}</p><p className="mt-3 flex items-center gap-2 text-sm font-semibold text-ink"><Building2 size={15} className="text-crimson" />{person.company}</p><a href={person.linkedinUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0a66c2] hover:underline"><LinkIcon size={16} />View LinkedIn <ArrowUpRight size={14} /></a></article>)}</div>}
+    {!loading && selectedCompany && results.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{results.map(person => {
+      const linkedInUrl = person.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${person.name} ${person.company}`)}`
+      return <article key={person.id} className="panel p-5"><div className="flex items-start justify-between gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-night text-xs font-bold text-white">{person.name.split(' ').map(part => part[0]).join('').slice(0, 2)}</span>{person.classYear && <span className="tag">HBS ’{person.classYear.slice(-2)}</span>}</div><h2 className="mt-4 font-bold text-night">{person.name}</h2><p className="mt-1 text-sm leading-5 text-ink-muted">{person.title}</p><p className="mt-3 flex items-center gap-2 text-sm font-semibold text-ink"><Building2 size={15} className="text-crimson" />{person.company}</p><a href={linkedInUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0a66c2] hover:underline"><LinkIcon size={16} />{person.linkedinUrl ? 'View LinkedIn' : 'Search LinkedIn'} <ArrowUpRight size={14} /></a></article>
+    })}</div>}
 
     {!loading && selectedCompany && results.length === 0 && <div className="mt-4"><EmptyState title={`No verified alumni at ${selectedCompany} yet`}>Use the LinkedIn search above to find HBS alumni, then flag strong matches for the club’s verified directory.</EmptyState></div>}
 
