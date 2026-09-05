@@ -56,7 +56,7 @@ create table public.saved_opportunities (
 create table public.alumni (
   id uuid primary key default gen_random_uuid(), full_name text not null, hbs_class_year integer,
   company text not null, title text not null, linkedin_url text not null,
-  current_role boolean not null default true, verified_at timestamptz,
+  is_current_role boolean not null default true, verified_at timestamptz,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
