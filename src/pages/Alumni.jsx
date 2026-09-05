@@ -22,11 +22,10 @@ function CompanyCombobox({ value, onChange, companyNames }) {
 
   const matches = useMemo(() => {
     const needle = input.trim().toLowerCase()
-    if (!needle) return companyNames.slice(0, 8)
+    if (!needle) return companyNames
     return companyNames
       .filter(name => organizationSearchText(name).includes(needle))
       .sort((a, b) => Number(!organizationSearchText(a).startsWith(needle)) - Number(!organizationSearchText(b).startsWith(needle)) || a.localeCompare(b))
-      .slice(0, 8)
   }, [companyNames, input])
 
   const selectCompany = (name) => {
