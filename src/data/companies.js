@@ -651,6 +651,64 @@ export const companies = [
     type: "Women's Soccer",
   },
 
+  // ── Institutional Sports Investors ───────────────────────────────────────────
+  {
+    id: 'arctos-partners',
+    name: 'Arctos Partners',
+    sector: 'sports-investing',
+    tagline: 'Dedicated investment platform for professional sports franchises, ownership groups, and adjacent assets',
+    type: 'Sports Private Equity',
+  },
+  {
+    id: 'sixth-street',
+    name: 'Sixth Street',
+    sector: 'sports-investing',
+    tagline: 'Flexible capital investor across sports franchises, media rights, venues, and sports platforms',
+    type: 'Global Investment Firm',
+  },
+  {
+    id: 'redbird-capital-partners',
+    name: 'RedBird Capital Partners',
+    sector: 'sports-investing',
+    tagline: 'Strategic investor in sports, media, entertainment, and sports-enabled operating companies',
+    type: 'Private Equity',
+  },
+  {
+    id: 'silver-lake',
+    name: 'Silver Lake',
+    sector: 'sports-investing',
+    tagline: 'Technology-focused investor with holdings across teams, commerce, media, and sports rights',
+    type: 'Technology Investment Firm',
+  },
+  {
+    id: 'ares-management',
+    name: 'Ares Management',
+    sector: 'sports-investing',
+    tagline: 'Capital provider to sports leagues, teams, franchises, media companies, and ecosystem businesses',
+    type: 'Alternative Asset Manager',
+  },
+  {
+    id: 'cvc-capital-partners',
+    name: 'CVC Capital Partners',
+    sector: 'sports-investing',
+    tagline: 'Global private-markets investor with a major sports, media, and entertainment portfolio',
+    type: 'Private Markets Firm',
+  },
+  {
+    id: 'dynasty-equity',
+    name: 'Dynasty Equity',
+    sector: 'sports-investing',
+    tagline: 'Sports-focused investor across franchises, leagues, sports businesses, and adjacent assets',
+    type: 'Sports Investment Firm',
+  },
+  {
+    id: 'bruin-capital',
+    name: 'Bruin Capital',
+    sector: 'sports-investing',
+    tagline: 'Investment and operating platform focused on sports, media, technology, and entertainment',
+    type: 'Sports Investment Platform',
+  },
+
   // ── Athlete Ventures ─────────────────────────────────────────────────────────
   {
     id: 'springhill-company',
