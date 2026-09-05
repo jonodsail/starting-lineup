@@ -100,3 +100,26 @@ export function useAuth() {
   if (!value) throw new Error('useAuth must be used inside AuthProvider')
   return value
 }
+
+export async function loadAlumniDirectory() {
+  if (!supabase) return []
+
+  const { data, error } = await supabase
+    .from('alumni')
+    .select('id, full_name, hbs_class_year, company, title, linkedin_url, verified_at')
+    .eq('is_current_role', true)
+    .order('company')
+    .order('full_name')
+
+  if (error) throw error
+
+  return data.map(person => ({
+    id: person.id,
+    name: person.full_name,
+    classYear: person.hbs_class_year ? String(person.hbs_class_year) : '',
+    company: person.company,
+    title: person.title,
+    linkedinUrl: person.linkedin_url,
+    verifiedAt: person.verified_at,
+  }))
+}
