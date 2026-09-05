@@ -16,8 +16,8 @@ function readPreviewMember() {
 }
 
 function isAllowedHbsEmail(email = '') {
-  const [, domain = ''] = email.trim().toLowerCase().split('@')
-  return ALLOWED_DOMAINS.has(domain)
+  const parts = email.trim().toLowerCase().split('@')
+  return parts.length === 2 && Boolean(parts[0]) && ALLOWED_DOMAINS.has(parts[1])
 }
 
 function readProfile() {
@@ -30,6 +30,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(() => Boolean(supabase))
   const [profile, setProfile] = useState(readProfile)
   const [authError, setAuthError] = useState('')
+  const [authNotice, setAuthNotice] = useState('')
   const [isOfficer, setIsOfficer] = useState(() => Boolean(readPreviewMember()))
 
   useEffect(() => {
@@ -56,24 +57,42 @@ export function AuthProvider({ children }) {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  const signIn = async () => {
+  const signIn = async (email) => {
     setAuthError('')
+    setAuthNotice('')
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!isAllowedHbsEmail(normalizedEmail)) {
+      setAuthError('Use an @mba2027.hbs.edu or @mba2028.hbs.edu email address.')
+      return false
+    }
     if (!supabase) {
       setAuthError('Authentication is not configured yet. Add the Supabase environment values to enable HBS sign-in.')
-      return
+      return false
     }
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/dashboard`, queryParams: { hd: 'hbs.edu' } } })
+    const { error } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        shouldCreateUser: true,
+      },
+    })
+    if (error) {
+      setAuthError('We could not send the sign-in link. Please wait a moment and try again.')
+      return false
+    }
+    setAuthNotice(`Check ${normalizedEmail} for your secure sign-in link.`)
+    return true
   }
-  const enterPreview = () => { if (import.meta.env.DEV) { localStorage.setItem('starting_lineup_preview', 'true'); setMember(PREVIEW_MEMBER); setIsOfficer(true); setAuthError('') } }
+  const enterPreview = () => { if (import.meta.env.DEV) { localStorage.setItem('starting_lineup_preview', 'true'); setMember(PREVIEW_MEMBER); setIsOfficer(true); setAuthError(''); setAuthNotice('') } }
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut()
-    setMember(null); setProfile(null); setIsOfficer(false); localStorage.removeItem('starting_lineup_preview'); localStorage.removeItem(STORAGE_KEY)
+    setMember(null); setProfile(null); setIsOfficer(false); setAuthNotice(''); localStorage.removeItem('starting_lineup_preview'); localStorage.removeItem(STORAGE_KEY)
   }
   const saveProfile = (nextProfile) => {
     const saved = { ...nextProfile, onboardingComplete: true, updatedAt: new Date().toISOString() }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); setProfile(saved)
   }
-  return <AuthContext.Provider value={{ loading, member, profile, authError, isOfficer, isConfigured: Boolean(supabase), signIn, signOut, enterPreview, saveProfile }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ loading, member, profile, authError, authNotice, isOfficer, isConfigured: Boolean(supabase), signIn, signOut, enterPreview, saveProfile }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

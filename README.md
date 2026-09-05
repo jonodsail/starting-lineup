@@ -6,7 +6,7 @@ A private sports-career resource built for the HBS Business of Sports Club. The 
 
 ## Pilot features
 
-- Google authentication restricted to `@mba2027.hbs.edu` and `@mba2028.hbs.edu`
+- Email magic-link authentication restricted to `@mba2027.hbs.edu` and `@mba2028.hbs.edu`
 - RC/EC member orientation and career preferences
 - Officer-curated MBA internships and full-time opportunities
 - Personal saved-role pipeline
@@ -20,14 +20,14 @@ npm install
 npm run dev
 ```
 
-When Supabase variables are absent, local development shows a preview-only entry button. Production fails closed and requires Google authentication.
+When Supabase variables are absent, local development shows a preview-only entry button. Production fails closed and requires an HBS email magic link.
 
 ## Connect the Supabase project
 
 1. Open the Supabase project used for Starting Lineup.
 2. Run `supabase/schema.sql` in its SQL editor. Starting Lineup uses a separate
    `member_profiles` table, leaving the legacy job tracker's `profiles` table unchanged.
-3. Enable Google under Authentication → Providers.
+3. Enable Email under Authentication → Providers.
 4. Add the local and Vercel callback URLs to the authentication redirect allowlist.
 5. Add officer emails directly to `officer_accounts` through the protected SQL editor.
 6. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
