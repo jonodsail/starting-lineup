@@ -5,22 +5,14 @@ import { EmptyState, PageHeader } from '../components/ui'
 import { companies as ecosystemCompanies } from '../data/companies'
 import { opportunities } from '../data/opportunities'
 import { alumniSeed } from '../data/alumniSeed'
+import { canonicalizeOrganization, majorLeagueOrganizations, organizationSearchText, organizationsMatch } from '../data/organizationCatalog'
 import { loadAlumniDirectory } from '../lib/auth'
 
 const baseCompanyNames = [...new Set([
   ...ecosystemCompanies.map(company => company.name),
   ...opportunities.map(opportunity => opportunity.company),
-])].sort((a, b) => a.localeCompare(b))
-
-function normalizeCompany(value = '') {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, '')
-}
-
-function isSameCompany(left, right) {
-  const a = normalizeCompany(left)
-  const b = normalizeCompany(right)
-  return a === b || (Math.min(a.length, b.length) > 5 && (a.includes(b) || b.includes(a)))
-}
+  ...majorLeagueOrganizations,
+].map(canonicalizeOrganization))].sort((a, b) => a.localeCompare(b))
 
 function CompanyCombobox({ value, onChange, companyNames }) {
   const listboxId = useId()
@@ -32,8 +24,8 @@ function CompanyCombobox({ value, onChange, companyNames }) {
     const needle = input.trim().toLowerCase()
     if (!needle) return companyNames.slice(0, 8)
     return companyNames
-      .filter(name => name.toLowerCase().includes(needle))
-      .sort((a, b) => Number(!a.toLowerCase().startsWith(needle)) - Number(!b.toLowerCase().startsWith(needle)) || a.localeCompare(b))
+      .filter(name => organizationSearchText(name).includes(needle))
+      .sort((a, b) => Number(!organizationSearchText(a).startsWith(needle)) - Number(!organizationSearchText(b).startsWith(needle)) || a.localeCompare(b))
       .slice(0, 8)
   }, [companyNames, input])
 
@@ -99,7 +91,7 @@ function CompanyCombobox({ value, onChange, companyNames }) {
         className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm ${index === activeIndex ? 'bg-crimson-soft text-crimson' : 'text-ink hover:bg-canvas'}`}
       ><span>{name}</span>{name === value && <Check size={15} />}</button>) : <p className="px-3 py-3 text-sm text-ink-muted">No company matches that search.</p>}
     </div>}
-    <p className="mt-2 text-xs text-ink-muted">Search {companyNames.length} organizations from Sports Ecosystem Explorer and current opportunities.</p>
+    <p className="mt-2 text-xs text-ink-muted">Search {companyNames.length} organizations across major leagues, the sports ecosystem, and current opportunities.</p>
   </div>
 }
 
@@ -114,7 +106,7 @@ export default function Alumni() {
   const companyNames = useMemo(() => [...new Set([
     ...baseCompanyNames,
     ...alumni.map(person => person.company),
-  ].filter(Boolean))].sort((a, b) => a.localeCompare(b)), [alumni])
+  ].filter(Boolean).map(canonicalizeOrganization))].sort((a, b) => a.localeCompare(b)), [alumni])
 
   useEffect(() => {
     let active = true
@@ -130,9 +122,13 @@ export default function Alumni() {
   }
 
   const results = useMemo(() => alumni.filter(person => {
-    if (!selectedCompany || !isSameCompany(person.company, selectedCompany)) return false
+    if (!selectedCompany || !organizationsMatch(person.company, selectedCompany)) return false
     const haystack = `${person.name} ${person.title}`.toLowerCase()
     return !peopleQuery || haystack.includes(peopleQuery.toLowerCase())
+  }).sort((left, right) => {
+    const leftYear = Number(left.classYear) || 0
+    const rightYear = Number(right.classYear) || 0
+    return rightYear - leftYear || left.name.localeCompare(right.name)
   }), [alumni, peopleQuery, selectedCompany])
 
   const linkedInUrl = selectedCompany
