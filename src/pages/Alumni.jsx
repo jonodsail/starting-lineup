@@ -1,12 +1,12 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { ArrowUpRight, Building2, Check, Link as LinkIcon, Search, Users, X } from 'lucide-react'
+import { ArrowUpRight, Building2, Check, CheckCircle2, Link as LinkIcon, Search, Send, Users, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { EmptyState, PageHeader } from '../components/ui'
 import { companies as ecosystemCompanies } from '../data/companies'
 import { opportunities } from '../data/opportunities'
 import { alumniSeed } from '../data/alumniSeed'
 import { canonicalizeOrganization, majorLeagueOrganizations, organizationSearchText, organizationsMatch } from '../data/organizationCatalog'
-import { loadAlumniDirectory } from '../lib/auth'
+import { loadAlumniDirectory, submitAlumniCandidate } from '../lib/auth'
 
 const baseCompanyNames = [...new Set([
   ...ecosystemCompanies.map(company => company.name),
@@ -101,6 +101,8 @@ export default function Alumni() {
   const [alumni, setAlumni] = useState(alumniSeed)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [showSubmission, setShowSubmission] = useState(false)
+  const [submissionStatus, setSubmissionStatus] = useState('idle')
 
   const companyNames = useMemo(() => [...new Set([
     ...baseCompanyNames,
@@ -120,6 +122,28 @@ export default function Alumni() {
     setSearchParams(company ? { company } : {}, { replace: true })
   }
 
+  const submitCandidate = async (event) => {
+    event.preventDefault()
+    setSubmissionStatus('submitting')
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
+    try {
+      await submitAlumniCandidate({
+        fullName: form.get('fullName'),
+        classYear: form.get('classYear') ? Number(form.get('classYear')) : null,
+        company: form.get('company'),
+        title: form.get('title'),
+        linkedinUrl: form.get('linkedinUrl'),
+        notes: form.get('notes'),
+      })
+      formElement.reset()
+      setSubmissionStatus('submitted')
+      setShowSubmission(false)
+    } catch {
+      setSubmissionStatus('error')
+    }
+  }
+
   const results = useMemo(() => alumni.filter(person => {
     if (!selectedCompany || !organizationsMatch(person.company, selectedCompany)) return false
     const haystack = `${person.name} ${person.title}`.toLowerCase()
@@ -135,7 +159,11 @@ export default function Alumni() {
     : 'https://www.linkedin.com/school/harvard-business-school/people/'
 
   return <div className="page-wrap">
-    <PageHeader eyebrow="HBS network" title="Who do we know there?" description="Choose any organization in the sports ecosystem. Starting Lineup will show relevant HBS alumni and a broader LinkedIn search when the club directory has gaps." />
+    <PageHeader eyebrow="HBS network" title="Who do we know there?" description="Choose any organization in the sports ecosystem. Starting Lineup will show relevant HBS alumni and a broader LinkedIn search when the club directory has gaps." action={<button type="button" onClick={() => { setShowSubmission(value => !value); setSubmissionStatus('idle') }} className="btn-secondary">{showSubmission ? <X size={15} /> : <Send size={15} />}{showSubmission ? 'Close' : 'Submit an alum'}</button>} />
+
+    {submissionStatus === 'submitted' && <div className="mb-5 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-forest"><CheckCircle2 size={17} />Submitted for officer verification. The record will not appear until approved.</div>}
+    {submissionStatus === 'error' && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">The submission could not be sent. Please try again in a moment.</div>}
+    {showSubmission && <form key={selectedCompany} onSubmit={submitCandidate} className="panel mb-5 p-5"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p className="font-semibold text-night">Know an HBS alum we should include?</p><p className="mt-1 text-sm leading-6 text-ink-muted">Share their public professional information. Club officers verify HBS affiliation, company, and title before publishing.</p></div><span className="tag shrink-0">Officer approval required</span></div><div className="mt-5 grid gap-4 sm:grid-cols-2"><label><span className="label">Full name</span><input name="fullName" className="input" required /></label><label><span className="label">Company</span><input name="company" className="input" defaultValue={selectedCompany} required /></label><label><span className="label">Current title</span><input name="title" className="input" required /></label><label><span className="label">HBS graduation year <span className="font-normal text-ink-muted">(optional)</span></span><input name="classYear" type="number" min="1908" max="2035" className="input" /></label><label className="sm:col-span-2"><span className="label">LinkedIn profile</span><input name="linkedinUrl" type="url" className="input" placeholder="https://www.linkedin.com/in/…" required /></label><label className="sm:col-span-2"><span className="label">Context for officers <span className="font-normal text-ink-muted">(optional)</span></span><textarea name="notes" className="input min-h-20" placeholder="How you found them or anything officers should confirm" /></label></div><div className="mt-4 flex justify-end"><button type="submit" disabled={submissionStatus === 'submitting'} className="btn-primary disabled:cursor-wait disabled:opacity-70">{submissionStatus === 'submitting' ? 'Sending…' : 'Send for verification'} <Send size={15} /></button></div></form>}
 
     <section className="panel relative z-10 p-5 md:p-6">
       <CompanyCombobox key={selectedCompany} value={selectedCompany} onChange={selectCompany} companyNames={companyNames} />

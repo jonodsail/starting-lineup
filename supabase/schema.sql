@@ -66,12 +66,29 @@ create table public.alumni_contacts (
   updated_at timestamptz not null default now()
 );
 
+create table public.alumni_submissions (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  hbs_class_year integer,
+  company text not null,
+  title text not null,
+  linkedin_url text not null,
+  notes text not null default '',
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  submitted_by uuid not null references auth.users(id) on delete cascade,
+  reviewed_by uuid references auth.users(id),
+  reviewed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.officer_accounts enable row level security;
 alter table public.member_profiles enable row level security;
 alter table public.opportunities enable row level security;
 alter table public.saved_opportunities enable row level security;
 alter table public.alumni enable row level security;
 alter table public.alumni_contacts enable row level security;
+alter table public.alumni_submissions enable row level security;
 
 create policy "members read approved opportunities" on public.opportunities for select using (public.is_allowed_hbs_member() and (status = 'approved' or public.is_club_officer()));
 create policy "members submit drafts" on public.opportunities for insert with check (public.is_allowed_hbs_member() and submitted_by = auth.uid() and status = 'draft');
@@ -81,6 +98,9 @@ create policy "members manage own tracker" on public.saved_opportunities for all
 create policy "members read alumni" on public.alumni for select using (public.is_allowed_hbs_member());
 create policy "officers manage alumni" on public.alumni for all using (public.is_club_officer()) with check (public.is_club_officer());
 create policy "officers manage alumni contacts" on public.alumni_contacts for all using (public.is_club_officer()) with check (public.is_club_officer());
+create policy "members submit alumni candidates" on public.alumni_submissions for insert with check (public.is_allowed_hbs_member() and submitted_by = auth.uid() and status = 'pending');
+create policy "members read own alumni submissions" on public.alumni_submissions for select using (public.is_allowed_hbs_member() and submitted_by = auth.uid());
+create policy "officers manage alumni submissions" on public.alumni_submissions for all using (public.is_club_officer()) with check (public.is_club_officer());
 create policy "officers view allowlist" on public.officer_accounts for select using (public.is_club_officer());
 
 -- Authorized alumni emails live in a separate officer-only table and never enter member queries.

@@ -123,3 +123,23 @@ export async function loadAlumniDirectory() {
     verifiedAt: person.verified_at,
   }))
 }
+
+export async function submitAlumniCandidate(candidate) {
+  if (!supabase) return { preview: true }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) throw userError || new Error('Sign in before submitting an alum.')
+
+  const { error } = await supabase.from('alumni_submissions').insert({
+    full_name: candidate.fullName,
+    hbs_class_year: candidate.classYear || null,
+    company: candidate.company,
+    title: candidate.title,
+    linkedin_url: candidate.linkedinUrl,
+    notes: candidate.notes || '',
+    submitted_by: user.id,
+  })
+
+  if (error) throw error
+  return { preview: false }
+}
