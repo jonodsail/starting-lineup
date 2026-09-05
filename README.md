@@ -22,6 +22,8 @@ npm run dev
 
 When Supabase variables are absent, local development shows a preview-only entry button. Production fails closed and requires an HBS email magic link.
 
+Vercel uses the rewrite in `vercel.json` so direct visits and authentication redirects to routes such as `/dashboard` load the React application instead of returning a platform 404.
+
 ## Connect the Supabase project
 
 1. Open the Supabase project used for Starting Lineup.
