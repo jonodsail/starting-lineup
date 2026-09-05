@@ -1,4 +1,5 @@
--- Starting Lineup pilot schema. Run in a dedicated Supabase project.
+-- Starting Lineup pilot schema. Table names are isolated so this can safely
+-- coexist with the legacy job tracker in the shared Supabase project.
 create extension if not exists pgcrypto;
 
 create table public.officer_accounts (
@@ -19,7 +20,7 @@ $$;
 revoke all on function public.is_club_officer() from public, anon;
 grant execute on function public.is_club_officer() to authenticated;
 
-create table public.profiles (
+create table public.member_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   full_name text not null,
@@ -66,7 +67,7 @@ create table public.alumni_contacts (
 );
 
 alter table public.officer_accounts enable row level security;
-alter table public.profiles enable row level security;
+alter table public.member_profiles enable row level security;
 alter table public.opportunities enable row level security;
 alter table public.saved_opportunities enable row level security;
 alter table public.alumni enable row level security;
@@ -75,7 +76,7 @@ alter table public.alumni_contacts enable row level security;
 create policy "members read approved opportunities" on public.opportunities for select using (public.is_allowed_hbs_member() and (status = 'approved' or public.is_club_officer()));
 create policy "members submit drafts" on public.opportunities for insert with check (public.is_allowed_hbs_member() and submitted_by = auth.uid() and status = 'draft');
 create policy "officers manage opportunities" on public.opportunities for all using (public.is_club_officer()) with check (public.is_club_officer());
-create policy "members manage own profile" on public.profiles for all using (public.is_allowed_hbs_member() and id = auth.uid()) with check (public.is_allowed_hbs_member() and id = auth.uid() and lower(email) = lower(auth.jwt() ->> 'email'));
+create policy "members manage own profile" on public.member_profiles for all using (public.is_allowed_hbs_member() and id = auth.uid()) with check (public.is_allowed_hbs_member() and id = auth.uid() and lower(email) = lower(auth.jwt() ->> 'email'));
 create policy "members manage own tracker" on public.saved_opportunities for all using (public.is_allowed_hbs_member() and user_id = auth.uid()) with check (public.is_allowed_hbs_member() and user_id = auth.uid());
 create policy "members read alumni" on public.alumni for select using (public.is_allowed_hbs_member());
 create policy "officers manage alumni" on public.alumni for all using (public.is_club_officer()) with check (public.is_club_officer());

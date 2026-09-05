@@ -22,10 +22,11 @@ npm run dev
 
 When Supabase variables are absent, local development shows a preview-only entry button. Production fails closed and requires Google authentication.
 
-## Connect the dedicated Supabase project
+## Connect the Supabase project
 
-1. Create a new Supabase project for Starting Lineup.
-2. Run `supabase/schema.sql` in its SQL editor.
+1. Open the Supabase project used for Starting Lineup.
+2. Run `supabase/schema.sql` in its SQL editor. Starting Lineup uses a separate
+   `member_profiles` table, leaving the legacy job tracker's `profiles` table unchanged.
 3. Enable Google under Authentication → Providers.
 4. Add the local and Vercel callback URLs to the authentication redirect allowlist.
 5. Add officer emails directly to `officer_accounts` through the protected SQL editor.
