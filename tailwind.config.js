@@ -7,26 +7,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#080808',
-        surface: '#111111',
-        border: '#222222',
-        muted: '#555555',
-        subtle: '#cccccc',
-        accent: '#00ff87',
-        secondary: '#ffffff',
+        canvas: '#f6f4ef',
+        cream: '#efebe2',
+        night: '#171516',
+        ink: '#2d292a',
+        'ink-muted': '#746f70',
+        line: '#ddd8d0',
+        crimson: '#a41034',
+        'crimson-light': '#e06a85',
+        'crimson-soft': '#f5e5e9',
+        forest: '#1f6d55',
+        gold: '#8b6719',
+        'gold-soft': '#f5edda',
       },
       fontFamily: {
-        display: ['"Bebas Neue"', 'sans-serif'],
+        display: ['"IBM Plex Sans"', 'sans-serif'],
         body: ['"IBM Plex Sans"', 'sans-serif'],
-      },
-      keyframes: {
-        'slide-in': {
-          from: { transform: 'translateX(100%)' },
-          to: { transform: 'translateX(0)' },
-        },
-      },
-      animation: {
-        'slide-in': 'slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
       },
     },
   },

@@ -28,4 +28,8 @@ export default [
       ],
     },
   },
+  {
+    files: ['src/lib/auth.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ]
