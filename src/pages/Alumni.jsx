@@ -2,14 +2,14 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { ArrowUpRight, Building2, Check, CheckCircle2, Link as LinkIcon, Search, Send, Users, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { EmptyState, PageHeader } from '../components/ui'
-import { companies as ecosystemCompanies } from '../data/companies'
+import { ecosystemCompanyNames } from '../data/ecosystemCompanyNames'
 import { opportunities } from '../data/opportunities'
 import { alumniSeed } from '../data/alumniSeed'
 import { canonicalizeOrganization, majorLeagueOrganizations, organizationSearchText, organizationsMatch } from '../data/organizationCatalog'
 import { loadAlumniDirectory, submitAlumniCandidate } from '../lib/auth'
 
 const baseCompanyNames = [...new Set([
-  ...ecosystemCompanies.map(company => company.name),
+  ...ecosystemCompanyNames,
   ...opportunities.map(opportunity => opportunity.company),
   ...majorLeagueOrganizations,
 ].map(canonicalizeOrganization))].sort((a, b) => a.localeCompare(b))
