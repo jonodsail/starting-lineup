@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
         setMember(null)
         setProfile(null)
         setProfileLoading(false)
-        setAuthError('Starting Lineup is currently limited to RC and EC HBS email accounts.')
+        setAuthError('Access is currently limited to RC and EC HBS email accounts.')
         setLoading(false)
         return
       }

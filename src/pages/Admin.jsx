@@ -29,7 +29,7 @@ export default function Admin() {
     let active = true
     loadOfficerQueue()
       .then(next => { if (active) { setQueue(next); setError('') } })
-      .catch(() => { if (active) setError('The officer queue could not load. Confirm your officer access and try again.') })
+      .catch(() => { if (active) setError('Confirm your officer access and try again.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [refreshToken])
@@ -51,7 +51,7 @@ export default function Admin() {
   return <div className="page-wrap">
     <PageHeader eyebrow="Club officers only" title="Officer desk" description="Review member submissions, protect the quality bar, and publish only verified records." />
 
-    {!isSupabaseConfigured && <div className="mb-5 rounded-xl border border-line bg-cream px-4 py-3 text-sm text-ink-muted">The officer desk reads live submissions from Supabase. Connect the project environment values to use it.</div>}
+    {!isSupabaseConfigured && <div className="mb-5 rounded-xl border border-line bg-cream px-4 py-3 text-sm text-ink-muted">Connect the project environment values to use it.</div>}
     {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error}</div>}
 
     <div className="grid gap-4 sm:grid-cols-3">

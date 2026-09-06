@@ -48,7 +48,7 @@ create table public.opportunities (
 create table public.saved_opportunities (
   user_id uuid not null references auth.users(id) on delete cascade,
   opportunity_id uuid not null references public.opportunities(id) on delete cascade,
-  stage text not null default 'Saved' check (stage in ('Saved', 'Applied', 'Interviewing', 'Offer', 'Passed')),
+  stage text not null default 'Saved' check (stage in ('Saved', 'Applied', 'Rejected', 'Interviewing', 'Offer', 'Passed')),
   notes text not null default '', saved_at timestamptz not null default now(),
   primary key (user_id, opportunity_id)
 );

@@ -51,22 +51,22 @@ export default function Opportunities() {
   }
 
   return <div className="page-wrap">
-    <PageHeader eyebrow="Officer-curated board" title="MBA opportunities in sports" description="Internships and full-time roles selected for HBS candidates. Each listing includes the signal that made it relevant." action={<button onClick={() => { setShowSubmit(value => !value); setSubmitStatus('idle') }} className="btn-secondary">{showSubmit ? <X size={15} /> : <Send size={15} />}{showSubmit ? 'Close' : 'Submit a role'}</button>} />
+    <PageHeader eyebrow="Officer-curated board" title="MBA opportunities in sports" description="Internships and full-time roles selected for HBS candidates." action={<button onClick={() => { setShowSubmit(value => !value); setSubmitStatus('idle') }} className="btn-secondary">{showSubmit ? <X size={15} /> : <Send size={15} />}{showSubmit ? 'Close' : 'Submit a role'}</button>} />
 
     {submitStatus === 'submitted' && <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-forest"><CheckCircle2 size={17} />Sent to the officer desk. It will not publish until an officer approves it.</div>}
     {submitStatus === 'error' && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">The submission could not be sent. Please try again in a moment.</div>}
     {(error || trackerError) && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error || trackerError}</div>}
 
     {showSubmit && <form onSubmit={submitRole} className="panel mb-5 p-5">
-      <div className="flex items-start justify-between gap-4"><div><p className="font-semibold text-night">Suggest an opportunity</p><p className="mt-1 text-sm text-ink-muted">Club officers verify every submission before members see it.</p></div><span className="tag shrink-0">Officer approval required</span></div>
+      <p className="font-semibold text-night">Suggest an opportunity</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label><span className="label">Company</span><input name="company" className="input" required /></label>
         <label><span className="label">Role title</span><input name="title" className="input" required /></label>
         <label><span className="label">Type</span><select name="type" className="input" required defaultValue={TYPES[0]}>{TYPES.map(item => <option key={item}>{item}</option>)}</select></label>
         <label><span className="label">Function</span><select name="function" className="input" required defaultValue={FUNCTIONS[0]}>{FUNCTIONS.map(item => <option key={item}>{item}</option>)}</select></label>
         <label className="sm:col-span-2"><span className="label">Sector</span><select name="sector" className="input" required defaultValue={SECTORS[0]}>{SECTORS.map(item => <option key={item}>{item}</option>)}</select></label>
-        <label className="sm:col-span-2"><span className="label">Link to the specific posting</span><input name="url" type="url" className="input" placeholder="https://…" required /><span className="mt-1 block text-xs text-ink-muted">Role-specific links only. General careers pages are rejected.</span></label>
-        <label className="sm:col-span-2"><span className="label">Why is it right for an HBS MBA?</span><textarea name="mbaSignal" className="input min-h-20" required /></label>
+        <label className="sm:col-span-2"><span className="label">Link to the specific posting</span><input name="url" type="url" className="input" placeholder="https://…" required /><span className="mt-1 block text-xs text-ink-muted">Role-specific links</span></label>
+        <label className="sm:col-span-2"><span className="label">Fit</span><textarea name="mbaSignal" className="input min-h-20" required /></label>
       </div>
       <div className="mt-4 flex justify-end"><button className="btn-primary disabled:cursor-wait disabled:opacity-70" type="submit" disabled={submitStatus === 'submitting'}>{submitStatus === 'submitting' ? 'Sending…' : 'Send to officers'} <Send size={15} /></button></div>
     </form>}
@@ -80,13 +80,13 @@ export default function Opportunities() {
       </div>
     </div>
 
-    <div className="mt-5 flex items-center justify-between"><p className="text-sm text-ink-muted"><strong className="text-night">{loading ? '—' : results.length}</strong> opportunities</p><p className="text-xs text-ink-muted">Most recently verified first</p></div>
+    <div className="mt-5 flex items-center justify-between"><p className="text-sm text-ink-muted"><strong className="text-night">{loading ? '—' : results.length}</strong> opportunities</p><p className="text-xs text-ink-muted">Most recently verified results first</p></div>
 
     {loading
       ? <div className="panel mt-4 px-6 py-12 text-center text-sm text-ink-muted">Loading the officer-curated board…</div>
       : <>
         <div className="mt-4 grid gap-4 xl:grid-cols-2">{results.map(item => <OpportunityCard key={item.id} opportunity={item} saved={savedIds.has(item.id)} onSave={save} />)}</div>
-        {results.length === 0 && <div className="mt-4"><EmptyState title={opportunities.length ? 'No roles match those filters' : 'No roles published yet'}>{opportunities.length ? 'Try widening one filter. Tight curation means the board will stay intentionally smaller than a general job site.' : 'Officers publish roles from the officer desk. Check back shortly, or submit one you have found.'}</EmptyState></div>}
+        {results.length === 0 && <div className="mt-4"><EmptyState title={opportunities.length ? 'No roles match these filters' : 'No roles published yet'} /></div>}
       </>}
   </div>
 }

@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { ExternalLink, Trash2 } from 'lucide-react'
 import { EmptyState, PageHeader } from '../components/ui'
 import { useTracker } from '../lib/hooks'
-import { isSupabaseConfigured } from '../lib/supabase'
 
-const STAGES = ['Saved', 'Applied', 'Interviewing', 'Offer', 'Passed']
+const STAGES = ['Saved', 'Applied', 'Rejected', 'Interviewing', 'Offer', 'Passed']
 
 // Notes are held locally while typing and committed on blur. Writing on every
 // keystroke would send one database round trip per character.
@@ -30,11 +29,9 @@ export default function Tracker() {
 
   return <div className="page-wrap">
     <PageHeader
-      eyebrow="Personal workspace"
+      eyebrow="Workspace"
       title="Keep your search moving"
-      description={isSupabaseConfigured
-        ? 'Track each role from first interest through final decision. Your tracker is private to you and follows you across devices.'
-        : 'Track each role from first interest through final decision. This local preview keeps your notes in this browser only.'}
+      description="Track and organize your recruitment progress."
     />
 
     {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error}</div>}
@@ -53,7 +50,7 @@ export default function Tracker() {
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
         <NoteField item={item} onCommit={update} />
         <div className="flex items-center gap-4 md:flex-col md:items-end">
-          <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-night hover:text-crimson">Source <ExternalLink size={14} /></a>
+          <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-night hover:text-crimson">Open posting <ExternalLink size={14} /></a>
           <button onClick={() => remove(item.id)} className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-crimson"><Trash2 size={14} />Remove</button>
         </div>
       </div>

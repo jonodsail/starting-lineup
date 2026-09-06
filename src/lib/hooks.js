@@ -25,7 +25,7 @@ export function useOpportunities() {
     let active = true
     loadOpportunities()
       .then(rows => { if (active) setOpportunities(rows || []) })
-      .catch(() => { if (active) setError('The opportunity board could not load. Try again in a moment.') })
+      .catch(() => { if (active) setError('The opportunity board could not load. Reload the page to try again.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])
@@ -43,7 +43,7 @@ export function useTracker() {
     let active = true
     loadTracker()
       .then(rows => { if (active) setItems(rows || []) })
-      .catch(() => { if (active) setError('Your tracker could not load. Try again in a moment.') })
+      .catch(() => { if (active) setError('Your tracker could not load. Reload the page to try again.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])

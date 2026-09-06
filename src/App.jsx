@@ -47,7 +47,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ScrollToTop />
-      <Suspense fallback={<div className="min-h-screen grid place-items-center text-ink-muted">Loading Starting Lineup…</div>}><Routes>
+      <Suspense fallback={<div className="min-h-screen grid place-items-center text-ink-muted">Loading…</div>}><Routes>
         <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<MemberRoute />}>

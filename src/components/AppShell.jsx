@@ -6,7 +6,7 @@ const navItems = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/opportunities', label: 'Opportunities', icon: BriefcaseBusiness },
   { to: '/alumni', label: 'Alumni', icon: Network },
-  { to: '/tracker', label: 'My tracker', icon: Target },
+  { to: '/tracker', label: 'Tracker', icon: Target },
 ]
 
 export default function AppShell() {
@@ -19,7 +19,7 @@ export default function AppShell() {
           <img src="/brand/business-of-sports-horizontal.png" alt="HBS Business of Sports Club" className="h-14 w-full object-contain" />
         </NavLink>
         <div className="mt-7 border-t border-white/10 pt-5">
-          <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">Starting Lineup</p>
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">HBS BOSC Recruitment Resource</p>
           <nav className="mt-3 space-y-1" aria-label="Primary navigation">
             {navItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive ? 'bg-white text-night' : 'text-white/65 hover:bg-white/10 hover:text-white'}`}><Icon size={17} aria-hidden="true" />{label}</NavLink>)}
             {isOfficer && <NavLink to="/admin" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive ? 'bg-white text-night' : 'text-white/65 hover:bg-white/10 hover:text-white'}`}><ShieldCheck size={17} aria-hidden="true" />Officer desk</NavLink>}
@@ -31,7 +31,7 @@ export default function AppShell() {
         </div>
       </aside>
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 px-5 py-3 backdrop-blur lg:hidden">
-        <div className="flex items-center justify-between"><span className="font-display text-xl font-bold">STARTING LINEUP</span><span className="rounded-full bg-crimson px-3 py-1 text-xs font-bold text-white">{initials}</span></div>
+        <div className="flex items-center justify-between"><span className="font-display text-xl font-bold">HBS BOSC</span><span className="rounded-full bg-crimson px-3 py-1 text-xs font-bold text-white">{initials}</span></div>
         <nav className="mt-3 flex gap-1 overflow-x-auto" aria-label="Mobile navigation">{[...navItems, ...(isOfficer ? [{ to: '/admin', label: 'Officer' }] : [])].map(({ to, label }) => <NavLink key={to} to={to} className={({ isActive }) => `whitespace-nowrap rounded-full px-3 py-1.5 text-xs ${isActive ? 'bg-night text-white' : 'text-ink-muted'}`}>{label}</NavLink>)}</nav>
       </header>
       <main className="lg:pl-64"><Outlet /></main>

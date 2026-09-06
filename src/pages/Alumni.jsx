@@ -113,7 +113,7 @@ export default function Alumni() {
     let active = true
     loadAlumniDirectory()
       .then(records => { if (active) setAlumni(records.length ? records : alumniSeed) })
-      .catch(() => { if (active) setLoadError('The alumni directory could not load. Try again in a moment.') })
+      .catch(() => { if (active) setLoadError('The alumni directory could not load. Reload the page to try again.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])
@@ -159,7 +159,7 @@ export default function Alumni() {
     : 'https://www.linkedin.com/school/harvard-business-school/people/'
 
   return <div className="page-wrap">
-    <PageHeader eyebrow="HBS network" title="Who do we know there?" description="Choose any organization in the sports ecosystem. Starting Lineup will show relevant HBS alumni and a broader LinkedIn search when the club directory has gaps." action={<button type="button" onClick={() => { setShowSubmission(value => !value); setSubmissionStatus('idle') }} className="btn-secondary">{showSubmission ? <X size={15} /> : <Send size={15} />}{showSubmission ? 'Close' : 'Submit an alum'}</button>} />
+    <PageHeader eyebrow="HBS network" title="Who do we know there?" description="Choose an organization in the sports ecosystem." action={<button type="button" onClick={() => { setShowSubmission(value => !value); setSubmissionStatus('idle') }} className="btn-secondary">{showSubmission ? <X size={15} /> : <Send size={15} />}{showSubmission ? 'Close' : 'Submit an alum'}</button>} />
 
     {submissionStatus === 'submitted' && <div className="mb-5 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-forest"><CheckCircle2 size={17} />Submitted for officer verification. The record will not appear until approved.</div>}
     {submissionStatus === 'error' && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">The submission could not be sent. Please try again in a moment.</div>}
