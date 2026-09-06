@@ -7,6 +7,13 @@ import { useOpportunities, useTracker } from '../lib/hooks'
 import { countAlumni } from '../lib/db'
 import { isSupabaseConfigured } from '../lib/supabase'
 
+function greeting(date = new Date()) {
+  const hour = date.getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
 function useAlumniCount() {
   const [count, setCount] = useState(null)
   useEffect(() => {
@@ -32,7 +39,7 @@ export default function Dashboard() {
   const firstName = profile?.name?.split(' ')[0] || 'there'
 
   return <div className="page-wrap">
-    <section className="relative overflow-hidden rounded-3xl bg-night px-6 py-8 text-white md:px-10 md:py-10"><div className="field-lines absolute inset-0 opacity-20" /><div className="relative flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.24em] text-crimson-light">Your club career desk</p><h1 className="mt-3 font-display text-4xl font-bold tracking-tight md:text-6xl">Good morning, {firstName}.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-white/55">A focused view of the opportunities and people that can move your sports search forward.</p></div><Link to="/opportunities" className="btn-light">Explore all roles <ArrowRight size={16} /></Link></div></section>
+    <section className="relative overflow-hidden rounded-3xl bg-night px-6 py-8 text-white md:px-10 md:py-10"><div className="field-lines absolute inset-0 opacity-20" /><div className="relative flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.24em] text-crimson-light">Your club career desk</p><h1 className="mt-3 font-display text-4xl font-bold tracking-tight md:text-6xl">{greeting()}, {firstName}.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-white/55">A focused view of the opportunities and people that can move your sports search forward.</p></div><Link to="/opportunities" className="btn-light">Explore all roles <ArrowRight size={16} /></Link></div></section>
 
     <div className="mt-6 grid gap-4 sm:grid-cols-3">
       <Stat value={loading ? '—' : opportunities.length} label="Curated opportunities" note="MBA-relevant roles only" />

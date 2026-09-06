@@ -81,7 +81,7 @@ export function AuthProvider({ children }) {
     setAuthNotice('')
     const normalizedEmail = email.trim().toLowerCase()
     if (!isAllowedHbsEmail(normalizedEmail)) {
-      setAuthError(`Use ${formatAllowedDomains('or')} email address.`)
+      setAuthError(`Use an ${formatAllowedDomains('or')} email address.`)
       return false
     }
     if (!supabase) {
