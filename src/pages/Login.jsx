@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { LoaderCircle, LockKeyhole, Mail } from 'lucide-react'
 import { useAuth } from '../lib/auth'
+import { formatAllowedDomains } from '../lib/config'
 
 export default function Login() {
   const { member, authError, authNotice, signIn, enterPreview, isConfigured } = useAuth()
@@ -30,7 +31,7 @@ export default function Login() {
       <form className="mt-8" onSubmit={handleSubmit}>
         <label className="label" htmlFor="hbs-email">HBS email address</label>
         <input id="hbs-email" className="input" type="email" autoComplete="email" inputMode="email" placeholder="yourname@mba2027.hbs.edu" value={email} onChange={(event) => setEmail(event.target.value)} disabled={sending} required />
-        <p className="mt-2 text-xs leading-5 text-ink-muted">Access is limited to <strong className="font-semibold text-ink">@mba2027.hbs.edu</strong> and <strong className="font-semibold text-ink">@mba2028.hbs.edu</strong>.</p>
+        <p className="mt-2 text-xs leading-5 text-ink-muted">Access is limited to <strong className="font-semibold text-ink">{formatAllowedDomains()}</strong>.</p>
         <button type="submit" disabled={sending} className="btn-primary mt-5 w-full shadow-lg shadow-night/10 disabled:cursor-wait disabled:opacity-70">
           {sending ? <LoaderCircle aria-hidden="true" className="animate-spin" size={18} /> : <Mail aria-hidden="true" size={18} />}
           {sending ? 'Sending sign-in link…' : 'Email me a sign-in link'}

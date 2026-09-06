@@ -29,8 +29,11 @@ function ProtectedRoute() {
 }
 
 function MemberRoute() {
-  const { profile } = useAuth()
+  const { profile, profileLoading } = useAuth()
   const location = useLocation()
+  // Wait for the stored profile before deciding. Redirecting while it loads
+  // would send returning members back through onboarding on every sign-in.
+  if (profileLoading) return <div className="min-h-screen grid place-items-center text-ink-muted">Loading your club workspace…</div>
   if (!profile?.onboardingComplete && location.pathname !== '/onboarding') return <Navigate to="/onboarding" replace />
   return <AppShell />
 }

@@ -20,7 +20,10 @@ npm install
 npm run dev
 ```
 
-When Supabase variables are absent, local development shows a preview-only entry button. Production fails closed and requires an HBS email magic link.
+When Supabase variables are absent, local development shows a preview-only entry
+button backed by the bundled opportunity file and browser storage. Production
+fails closed: it requires an HBS email magic link, and member profiles, saved
+roles, opportunities, and alumni all come from Supabase.
 
 Vercel uses the rewrite in `vercel.json` so direct visits and authentication redirects to routes such as `/dashboard` load the React application instead of returning a platform 404.
 
@@ -31,9 +34,14 @@ Vercel uses the rewrite in `vercel.json` so direct visits and authentication red
    `member_profiles` table, leaving the legacy job tracker's `profiles` table unchanged.
 3. Enable Email under Authentication → Providers.
 4. Add the local and Vercel callback URLs to the authentication redirect allowlist.
-5. Add officer emails directly to `officer_accounts` through the protected SQL editor.
-6. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
-7. Add the same variables in the separate Vercel project.
+5. Run `supabase/seed-opportunities.sql`. It adds the `verified_on` column and
+   publishes the pilot opportunity board. The board reads from the database, so
+   until this runs the opportunities page is empty. The script is idempotent and
+   uses fixed ids, so rerunning it refreshes the roles without detaching anyone's
+   saved-role tracker.
+6. Add officer emails directly to `officer_accounts` through the protected SQL editor.
+7. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
+8. Add the same variables in the separate Vercel project.
 
 The browser and database each enforce the RC/EC domain allowlist. The database policies are the security boundary; the interface check is for a clear member experience.
 

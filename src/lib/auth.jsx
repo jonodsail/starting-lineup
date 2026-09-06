@@ -1,60 +1,79 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { formatAllowedDomains, isAllowedHbsEmail } from './config'
+import { supabase } from './supabase'
+import { loadMemberProfile, saveMemberProfile } from './db'
 
-const ALLOWED_DOMAINS = new Set(['mba2027.hbs.edu', 'mba2028.hbs.edu'])
-const STORAGE_KEY = 'starting_lineup_profile_v1'
+const PREVIEW_PROFILE_KEY = 'starting_lineup_preview_profile_v1'
+const PREVIEW_FLAG_KEY = 'starting_lineup_preview'
 const PREVIEW_MEMBER = { email: 'preview@mba2027.hbs.edu', name: 'Pilot Member', preview: true }
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null
 
 const AuthContext = createContext(null)
 
+function isPreviewMode() {
+  return !supabase && import.meta.env.DEV
+}
+
 function readPreviewMember() {
-  return !supabase && import.meta.env.DEV && localStorage.getItem('starting_lineup_preview') === 'true' ? PREVIEW_MEMBER : null
+  return isPreviewMode() && localStorage.getItem(PREVIEW_FLAG_KEY) === 'true' ? PREVIEW_MEMBER : null
 }
 
-function isAllowedHbsEmail(email = '') {
-  const parts = email.trim().toLowerCase().split('@')
-  return parts.length === 2 && Boolean(parts[0]) && ALLOWED_DOMAINS.has(parts[1])
-}
-
-function readProfile() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') }
+function readPreviewProfile() {
+  if (!isPreviewMode()) return null
+  try { return JSON.parse(localStorage.getItem(PREVIEW_PROFILE_KEY) || 'null') }
   catch { return null }
 }
 
 export function AuthProvider({ children }) {
   const [member, setMember] = useState(readPreviewMember)
   const [loading, setLoading] = useState(() => Boolean(supabase))
-  const [profile, setProfile] = useState(readProfile)
+  const [profile, setProfile] = useState(readPreviewProfile)
+  const [profileLoading, setProfileLoading] = useState(() => Boolean(supabase))
   const [authError, setAuthError] = useState('')
   const [authNotice, setAuthNotice] = useState('')
   const [isOfficer, setIsOfficer] = useState(() => Boolean(readPreviewMember()))
 
   useEffect(() => {
     if (!supabase) return undefined
+    let active = true
+
     const acceptSession = async (session) => {
       const email = session?.user?.email || ''
       if (session && !isAllowedHbsEmail(email)) {
         await supabase.auth.signOut()
+        if (!active) return
         setMember(null)
+        setProfile(null)
+        setProfileLoading(false)
         setAuthError('Starting Lineup is currently limited to RC and EC HBS email accounts.')
-      } else {
-        setMember(session ? { email, name: session.user.user_metadata?.full_name || email.split('@')[0] } : null)
-        if (session) {
-          const { data: officerAccess } = await supabase.rpc('is_club_officer')
-          setIsOfficer(Boolean(officerAccess))
-        } else {
-          setIsOfficer(false)
-        }
+        setLoading(false)
+        return
       }
+
+      if (!active) return
+      setMember(session ? { email, name: session.user.user_metadata?.full_name || email.split('@')[0] } : null)
       setLoading(false)
+
+      if (!session) {
+        setIsOfficer(false)
+        setProfile(null)
+        setProfileLoading(false)
+        return
+      }
+
+      setProfileLoading(true)
+      const [officerResult, memberProfile] = await Promise.all([
+        supabase.rpc('is_club_officer'),
+        loadMemberProfile().catch(() => null),
+      ])
+      if (!active) return
+      setIsOfficer(Boolean(officerResult.data))
+      setProfile(memberProfile)
+      setProfileLoading(false)
     }
+
     supabase.auth.getSession().then(({ data }) => acceptSession(data.session))
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => acceptSession(session))
-    return () => listener.subscription.unsubscribe()
+    return () => { active = false; listener.subscription.unsubscribe() }
   }, [])
 
   const signIn = async (email) => {
@@ -62,7 +81,7 @@ export function AuthProvider({ children }) {
     setAuthNotice('')
     const normalizedEmail = email.trim().toLowerCase()
     if (!isAllowedHbsEmail(normalizedEmail)) {
-      setAuthError('Use an @mba2027.hbs.edu or @mba2028.hbs.edu email address.')
+      setAuthError(`Use ${formatAllowedDomains('or')} email address.`)
       return false
     }
     if (!supabase) {
@@ -83,63 +102,59 @@ export function AuthProvider({ children }) {
     setAuthNotice(`Check ${normalizedEmail} for your secure sign-in link.`)
     return true
   }
-  const enterPreview = () => { if (import.meta.env.DEV) { localStorage.setItem('starting_lineup_preview', 'true'); setMember(PREVIEW_MEMBER); setIsOfficer(true); setAuthError(''); setAuthNotice('') } }
+
+  const enterPreview = () => {
+    if (!isPreviewMode()) return
+    localStorage.setItem(PREVIEW_FLAG_KEY, 'true')
+    setMember(PREVIEW_MEMBER)
+    setIsOfficer(true)
+    setProfileLoading(false)
+    setAuthError('')
+    setAuthNotice('')
+  }
+
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut()
-    setMember(null); setProfile(null); setIsOfficer(false); setAuthNotice(''); localStorage.removeItem('starting_lineup_preview'); localStorage.removeItem(STORAGE_KEY)
+    setMember(null)
+    setProfile(null)
+    setIsOfficer(false)
+    setAuthNotice('')
+    localStorage.removeItem(PREVIEW_FLAG_KEY)
+    localStorage.removeItem(PREVIEW_PROFILE_KEY)
   }
-  const saveProfile = (nextProfile) => {
-    const saved = { ...nextProfile, onboardingComplete: true, updatedAt: new Date().toISOString() }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); setProfile(saved)
+
+  const saveProfile = useCallback(async (nextProfile) => {
+    if (!supabase) {
+      const saved = { ...nextProfile, onboardingComplete: true, updatedAt: new Date().toISOString() }
+      localStorage.setItem(PREVIEW_PROFILE_KEY, JSON.stringify(saved))
+      setProfile(saved)
+      return saved
+    }
+    const saved = await saveMemberProfile(nextProfile, member?.email)
+    setProfile(saved)
+    return saved
+  }, [member?.email])
+
+  const value = {
+    loading,
+    member,
+    profile,
+    profileLoading,
+    authError,
+    authNotice,
+    isOfficer,
+    isConfigured: Boolean(supabase),
+    signIn,
+    signOut,
+    enterPreview,
+    saveProfile,
   }
-  return <AuthContext.Provider value={{ loading, member, profile, authError, authNotice, isOfficer, isConfigured: Boolean(supabase), signIn, signOut, enterPreview, saveProfile }}>{children}</AuthContext.Provider>
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
   const value = useContext(AuthContext)
   if (!value) throw new Error('useAuth must be used inside AuthProvider')
   return value
-}
-
-export async function loadAlumniDirectory() {
-  if (!supabase) return []
-
-  const { data, error } = await supabase
-    .from('alumni')
-    .select('id, full_name, hbs_class_year, company, title, linkedin_url, verified_at')
-    .eq('is_current_role', true)
-    .order('company')
-    .order('full_name')
-
-  if (error) throw error
-
-  return data.map(person => ({
-    id: person.id,
-    name: person.full_name,
-    classYear: person.hbs_class_year ? String(person.hbs_class_year) : '',
-    company: person.company,
-    title: person.title,
-    linkedinUrl: person.linkedin_url,
-    verifiedAt: person.verified_at,
-  }))
-}
-
-export async function submitAlumniCandidate(candidate) {
-  if (!supabase) return { preview: true }
-
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) throw userError || new Error('Sign in before submitting an alum.')
-
-  const { error } = await supabase.from('alumni_submissions').insert({
-    full_name: candidate.fullName,
-    hbs_class_year: candidate.classYear || null,
-    company: candidate.company,
-    title: candidate.title,
-    linkedin_url: candidate.linkedinUrl,
-    notes: candidate.notes || '',
-    submitted_by: user.id,
-  })
-
-  if (error) throw error
-  return { preview: false }
 }

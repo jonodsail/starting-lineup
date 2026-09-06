@@ -6,7 +6,7 @@ import { ecosystemCompanyNames } from '../data/ecosystemCompanyNames'
 import { opportunities } from '../data/opportunities'
 import { alumniSeed } from '../data/alumniSeed'
 import { canonicalizeOrganization, majorLeagueOrganizations, organizationSearchText, organizationsMatch } from '../data/organizationCatalog'
-import { loadAlumniDirectory, submitAlumniCandidate } from '../lib/auth'
+import { loadAlumniDirectory, submitAlumniCandidate } from '../lib/db'
 
 const baseCompanyNames = [...new Set([
   ...ecosystemCompanyNames,

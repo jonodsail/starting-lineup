@@ -38,7 +38,7 @@ create table public.opportunities (
   location text, work_mode text,
   opportunity_type text not null check (opportunity_type in ('MBA Internship', 'Full-Time')),
   job_function text not null, sector text not null, description text, mba_signal text not null,
-  source_name text not null, source_url text not null, application_deadline date,
+  source_name text not null, source_url text not null, application_deadline date, verified_on date,
   status text not null default 'draft' check (status in ('draft', 'approved', 'expired', 'rejected')),
   featured boolean not null default false, submitted_by uuid references auth.users(id),
   approved_by uuid references auth.users(id), approved_at timestamptz,
