@@ -7,9 +7,21 @@ create table public.officer_accounts (
   created_at timestamptz not null default now()
 );
 
+create table public.allowed_email_domains (
+  domain text primary key check (domain = lower(domain) and domain like '%.%'),
+  note text not null default '',
+  created_at timestamptz not null default now()
+);
+
+-- Membership is data, not code. Officers edit this list from the officer desk;
+-- see supabase/allowed-domains.sql for the migration and its policies.
 create or replace function public.is_allowed_hbs_member()
-returns boolean language sql stable as $$
-  select lower(coalesce(auth.jwt() ->> 'email', '')) ~ '@mba202(7|8)\.hbs\.edu$';
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.allowed_email_domains
+    where domain = split_part(lower(coalesce(auth.jwt() ->> 'email', '')), '@', 2)
+      and split_part(lower(coalesce(auth.jwt() ->> 'email', '')), '@', 1) <> ''
+  );
 $$;
 
 create or replace function public.is_club_officer()
@@ -82,6 +94,7 @@ create table public.alumni_submissions (
   updated_at timestamptz not null default now()
 );
 
+alter table public.allowed_email_domains enable row level security;
 alter table public.officer_accounts enable row level security;
 alter table public.member_profiles enable row level security;
 alter table public.opportunities enable row level security;
@@ -102,5 +115,7 @@ create policy "members submit alumni candidates" on public.alumni_submissions fo
 create policy "members read own alumni submissions" on public.alumni_submissions for select using (public.is_allowed_hbs_member() and submitted_by = auth.uid());
 create policy "officers manage alumni submissions" on public.alumni_submissions for all using (public.is_club_officer()) with check (public.is_club_officer());
 create policy "officers view allowlist" on public.officer_accounts for select using (public.is_club_officer());
+create policy "anyone reads allowed domains" on public.allowed_email_domains for select to anon, authenticated using (true);
+create policy "officers manage allowed domains" on public.allowed_email_domains for all using (public.is_club_officer()) with check (public.is_club_officer());
 
 -- Authorized alumni emails live in a separate officer-only table and never enter member queries.

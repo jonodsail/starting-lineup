@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Check, ExternalLink, Inbox, Users, X } from 'lucide-react'
+import { Check, ExternalLink, Inbox, KeyRound, Plus, Trash2, Users, X } from 'lucide-react'
 import { EmptyState, PageHeader, Stat } from '../components/ui'
 import {
+  addAllowedDomain,
   approveAlumniSubmission,
+  loadAllowedDomains,
   loadOfficerQueue,
   rejectAlumniSubmission,
+  removeAllowedDomain,
   setOpportunityStatus,
 } from '../lib/db'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -14,6 +17,88 @@ function formatSubmitted(value) {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return ''
   return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+// Membership is a list officers maintain, not a constant in the source. The
+// September class rollover is an entry here rather than a code change, and an
+// officer whose own class has graduated can keep their access.
+function MemberAccess() {
+  const [domains, setDomains] = useState([])
+  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState('')
+  const [token, setToken] = useState(0)
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return undefined
+    let active = true
+    loadAllowedDomains()
+      .then(rows => { if (active) { setDomains(rows || []); setError('') } })
+      .catch(() => { if (active) setError('The domain list could not load.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [token])
+
+  const add = async (event) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const domain = String(form.get('domain') || '').trim().toLowerCase().replace(/^@/, '')
+    if (!domain) return
+    setBusy(domain)
+    try {
+      await addAllowedDomain(domain, String(form.get('note') || ''))
+      event.currentTarget.reset()
+      setToken(value => value + 1)
+    } catch {
+      setError('That domain could not be added. It may already be on the list.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const remove = async (domain) => {
+    setBusy(domain)
+    try {
+      await removeAllowedDomain(domain)
+      setToken(value => value + 1)
+    } catch {
+      setError('That domain could not be removed.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  return <section className="mt-12">
+    <div className="flex items-center gap-2"><KeyRound size={18} className="text-crimson" /><h2 className="font-display text-2xl font-bold text-night">Member access</h2></div>
+    <p className="mt-1 text-sm text-ink-muted">Anyone with an email on this list can sign in. Add the incoming class each September, and remove a class once it should no longer have access.</p>
+
+    {error && <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error}</div>}
+    {loading && <div className="panel mt-4 px-6 py-10 text-center text-sm text-ink-muted">Loading the domain list…</div>}
+
+    {!loading && <div className="panel mt-4 divide-y divide-line">
+      {domains.length === 0 && <p className="px-5 py-6 text-center text-sm text-ink-muted">No domains on the list. Nobody can sign in until one is added.</p>}
+      {domains.map(entry => <div key={entry.domain} className="flex items-center justify-between gap-4 px-5 py-3.5">
+        <div className="min-w-0">
+          <p className="font-mono text-sm font-semibold text-night">@{entry.domain}</p>
+          {entry.note && <p className="mt-0.5 text-xs text-ink-muted">{entry.note}</p>}
+        </div>
+        <button
+          onClick={() => remove(entry.domain)}
+          disabled={busy === entry.domain || domains.length === 1}
+          title={domains.length === 1 ? 'The last domain cannot be removed: nobody would be able to sign in.' : undefined}
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink-muted hover:border-crimson hover:text-crimson disabled:cursor-not-allowed disabled:opacity-40"
+        ><Trash2 size={14} />Remove</button>
+      </div>)}
+    </div>}
+
+    <form onSubmit={add} className="panel mt-4 p-5">
+      <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <label><span className="label">Domain</span><input name="domain" className="input" placeholder="mba2029.hbs.edu" required /></label>
+        <label><span className="label">Note <span className="font-normal text-ink-muted">(optional)</span></span><input name="note" className="input" placeholder="Class of 2029" /></label>
+        <button type="submit" disabled={Boolean(busy)} className="btn-primary disabled:cursor-wait disabled:opacity-70"><Plus size={16} />Add domain</button>
+      </div>
+    </form>
+  </section>
 }
 
 export default function Admin() {
@@ -100,5 +185,7 @@ export default function Admin() {
         </div>
       </article>)}</div>}
     </section>
+
+    <MemberAccess />
   </div>
 }

@@ -57,6 +57,32 @@ export async function submitAlumniCandidate(candidate) {
   return { preview: false }
 }
 
+// ── Allowed email domains ────────────────────────────────────────────────────
+
+export async function loadAllowedDomains() {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('allowed_email_domains')
+    .select('domain, note, created_at')
+    .order('domain')
+  if (error) throw error
+  return data.map(row => ({ domain: row.domain, note: row.note || '', createdAt: row.created_at }))
+}
+
+export async function addAllowedDomain(domain, note) {
+  if (!supabase) return
+  const { error } = await supabase
+    .from('allowed_email_domains')
+    .insert({ domain: domain.trim().toLowerCase().replace(/^@/, ''), note: note || '' })
+  if (error) throw error
+}
+
+export async function removeAllowedDomain(domain) {
+  if (!supabase) return
+  const { error } = await supabase.from('allowed_email_domains').delete().eq('domain', domain)
+  if (error) throw error
+}
+
 // ── Member profile ───────────────────────────────────────────────────────────
 
 function toProfile(row) {
