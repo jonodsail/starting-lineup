@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Search, Send, X } from 'lucide-react'
-import { EmptyState, OpportunityCard, PageHeader } from '../components/ui'
+import { EmptyState, ErrorNotice, OpportunityCard, PageHeader } from '../components/ui'
 import { FUNCTIONS, SECTORS } from '../data/opportunities'
 import { useOpportunities, useTracker } from '../lib/hooks'
 import { submitOpportunity } from '../lib/db'
@@ -8,7 +8,7 @@ import { submitOpportunity } from '../lib/db'
 const TYPES = ['MBA Internship', 'Full-Time']
 
 export default function Opportunities() {
-  const { opportunities, loading, error } = useOpportunities()
+  const { opportunities, loading, error, retry } = useOpportunities()
   const { items: tracker, save, error: trackerError } = useTracker()
   const [query, setQuery] = useState('')
   const [type, setType] = useState('All')
@@ -55,7 +55,8 @@ export default function Opportunities() {
 
     {submitStatus === 'submitted' && <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-forest"><CheckCircle2 size={17} />Sent to the officer desk. It will not publish until an officer approves it.</div>}
     {submitStatus === 'error' && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">The submission could not be sent. Please try again in a moment.</div>}
-    {(error || trackerError) && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error || trackerError}</div>}
+    {error && <div className="mb-4"><ErrorNotice onRetry={retry} retrying={loading}>{error}</ErrorNotice></div>}
+    {trackerError && <div className="mb-4"><ErrorNotice>{trackerError}</ErrorNotice></div>}
 
     {showSubmit && <form onSubmit={submitRole} className="panel mb-5 p-5">
       <p className="font-semibold text-night">Suggest an opportunity</p>

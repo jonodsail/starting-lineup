@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ExternalLink, Trash2 } from 'lucide-react'
-import { EmptyState, PageHeader } from '../components/ui'
+import { EmptyState, ErrorNotice, PageHeader } from '../components/ui'
 import { useTracker } from '../lib/hooks'
 
 const STAGES = ['Saved', 'Applied', 'Rejected', 'Interviewing', 'Offer', 'Passed']
@@ -25,7 +25,7 @@ function NoteField({ item, onCommit }) {
 }
 
 export default function Tracker() {
-  const { items, loading, error, update, remove } = useTracker()
+  const { items, loading, error, retry, update, remove } = useTracker()
 
   return <div className="page-wrap">
     <PageHeader
@@ -34,7 +34,7 @@ export default function Tracker() {
       description="Track and organize your recruitment progress."
     />
 
-    {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error}</div>}
+    {error && <div className="mb-5"><ErrorNotice onRetry={retry} retrying={loading}>{error}</ErrorNotice></div>}
 
     <div className="mb-5 flex gap-2 overflow-x-auto pb-1">{STAGES.map(stage => <span key={stage} className="tag whitespace-nowrap">{stage} · {items.filter(item => item.stage === stage).length}</span>)}</div>
 

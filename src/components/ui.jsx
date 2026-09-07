@@ -1,4 +1,4 @@
-import { ArrowUpRight, Bookmark, Check } from 'lucide-react'
+import { ArrowUpRight, Bookmark, Check, RotateCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 function formatVerifiedOn(verifiedOn) {
@@ -6,6 +6,17 @@ function formatVerifiedOn(verifiedOn) {
   const parsed = new Date(`${verifiedOn}T12:00:00`)
   if (Number.isNaN(parsed.getTime())) return 'Not yet verified by an officer'
   return `Posting verified ${parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+}
+
+// A failure a member can act on gets a control to act with. Errors that offer
+// no retry are the ones where retrying cannot help, so they pass no onRetry.
+export function ErrorNotice({ children, onRetry, retrying = false }) {
+  return <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">
+    <p>{children}</p>
+    {onRetry && <button type="button" onClick={onRetry} disabled={retrying} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-crimson/30 bg-white px-3 py-1.5 text-xs font-semibold text-crimson hover:border-crimson disabled:cursor-wait disabled:opacity-60">
+      <RotateCw size={13} className={retrying ? 'animate-spin' : undefined} />{retrying ? 'Retrying…' : 'Try again'}
+    </button>}
+  </div>
 }
 
 export function PageHeader({ eyebrow, title, description, action }) {

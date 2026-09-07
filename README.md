@@ -34,18 +34,33 @@ Vercel uses the rewrite in `vercel.json` so direct visits and authentication red
    `member_profiles` table, leaving the legacy job tracker's `profiles` table unchanged.
 3. Enable Email under Authentication → Providers.
 4. Add the local and Vercel callback URLs to the authentication redirect allowlist.
-5. Run `supabase/seed-opportunities.sql`. It adds the `verified_on` column and
+5. Run `supabase/allowed-domains.sql`. It creates the membership domain list,
+   seeds it with the two current classes, and repoints the access check at it.
+6. Run `supabase/resumes.sql`. It creates the private `resumes` bucket and its
+   policies. Members read and replace only their own file; officers can read
+   every resume and the member roster, which is what the onboarding copy tells
+   members. Withdrawing that access means removing the officer policies there
+   and the sentence in `Onboarding.jsx` together.
+7. Run `supabase/seed-opportunities.sql`. It adds the `verified_on` column and
    publishes the pilot opportunity board. The board reads from the database, so
    until this runs the opportunities page is empty. The script is idempotent and
    uses fixed ids, so rerunning it refreshes the roles without detaching anyone's
    saved-role tracker.
-6. Add officer emails directly to `officer_accounts` through the protected SQL editor.
-7. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
-8. Add the same variables in the separate Vercel project.
+8. Add officer emails directly to `officer_accounts` through the protected SQL editor.
+9. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
+10. Add the same variables in the separate Vercel project.
 
-The browser and database each enforce the RC/EC domain allowlist. The database policies are the security boundary; the interface check is for a clear member experience.
+Membership is controlled by the `allowed_email_domains` table, which officers
+edit from the Member access section of the officer desk. Run
+`supabase/allowed-domains.sql` once to create and seed it. The database policies
+are the security boundary; the interface check is for a clear member experience.
+When a new class arrives, add its domain there rather than changing code.
 
 ## Data handling
+
+Member resumes live in a private storage bucket, one file per member. Members
+can read and replace only their own; club officers can read all of them, and
+onboarding says so where the file is chosen.
 
 The source alumni workbook is not committed, and no alumni names, employers, or profile URLs are bundled into this public repository. Import those records only into the private Supabase project. Future authorized emails belong in the protected `alumni_contacts` table and are available only to club officers.
 

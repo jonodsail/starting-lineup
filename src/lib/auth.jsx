@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { formatAllowedDomains, isAllowedHbsEmail } from './config'
+import { FALLBACK_EMAIL_DOMAINS, formatDomains, isAllowedEmail } from './config'
 import { supabase } from './supabase'
-import { loadMemberProfile, saveMemberProfile } from './db'
+import { loadAllowedDomains, loadMemberProfile, saveMemberProfile } from './db'
 
 const PREVIEW_PROFILE_KEY = 'starting_lineup_preview_profile_v1'
 const PREVIEW_FLAG_KEY = 'starting_lineup_preview'
@@ -31,14 +31,16 @@ export function AuthProvider({ children }) {
   const [authError, setAuthError] = useState('')
   const [authNotice, setAuthNotice] = useState('')
   const [isOfficer, setIsOfficer] = useState(() => Boolean(readPreviewMember()))
+  const [allowedDomains, setAllowedDomains] = useState(FALLBACK_EMAIL_DOMAINS)
 
   useEffect(() => {
     if (!supabase) return undefined
     let active = true
+    let domains = FALLBACK_EMAIL_DOMAINS
 
     const acceptSession = async (session) => {
       const email = session?.user?.email || ''
-      if (session && !isAllowedHbsEmail(email)) {
+      if (session && !isAllowedEmail(email, domains)) {
         await supabase.auth.signOut()
         if (!active) return
         setMember(null)
@@ -71,7 +73,15 @@ export function AuthProvider({ children }) {
       setProfileLoading(false)
     }
 
-    supabase.auth.getSession().then(({ data }) => acceptSession(data.session))
+    loadAllowedDomains()
+      .then(rows => {
+        if (!active || !rows?.length) return
+        domains = rows.map(row => row.domain)
+        setAllowedDomains(domains)
+      })
+      .catch(() => {})
+      .finally(() => supabase.auth.getSession().then(({ data }) => acceptSession(data.session)))
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => acceptSession(session))
     return () => { active = false; listener.subscription.unsubscribe() }
   }, [])
@@ -80,8 +90,8 @@ export function AuthProvider({ children }) {
     setAuthError('')
     setAuthNotice('')
     const normalizedEmail = email.trim().toLowerCase()
-    if (!isAllowedHbsEmail(normalizedEmail)) {
-      setAuthError(`Use an ${formatAllowedDomains('or')} email address.`)
+    if (!isAllowedEmail(normalizedEmail, allowedDomains)) {
+      setAuthError(`Use an ${formatDomains(allowedDomains, 'or')} email address.`)
       return false
     }
     if (!supabase) {
@@ -136,6 +146,7 @@ export function AuthProvider({ children }) {
   }, [member?.email])
 
   const value = {
+    allowedDomains,
     loading,
     member,
     profile,

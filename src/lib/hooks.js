@@ -19,33 +19,47 @@ export function useOpportunities() {
   const [opportunities, setOpportunities] = useState(() => (supabase ? [] : bundledOpportunities))
   const [loading, setLoading] = useState(() => Boolean(supabase))
   const [error, setError] = useState('')
+  const [token, setToken] = useState(0)
 
   useEffect(() => {
     if (!supabase) return undefined
     let active = true
     loadOpportunities()
-      .then(rows => { if (active) setOpportunities(rows || []) })
-      .catch(() => { if (active) setError('The opportunity board could not load. Reload the page to try again.') })
+      .then(rows => { if (active) { setOpportunities(rows || []); setError('') } })
+      .catch(() => { if (active) setError('The opportunity board could not load.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
+  }, [token])
+
+  const retry = useCallback(() => {
+    if (!supabase) return
+    setLoading(true)
+    setToken(value => value + 1)
   }, [])
 
-  return { opportunities, loading, error }
+  return { opportunities, loading, error, retry }
 }
 
 export function useTracker() {
   const [items, setItems] = useState(() => (supabase ? [] : readTracker()))
   const [loading, setLoading] = useState(() => Boolean(supabase))
   const [error, setError] = useState('')
+  const [token, setToken] = useState(0)
 
   useEffect(() => {
     if (!supabase) return undefined
     let active = true
     loadTracker()
-      .then(rows => { if (active) setItems(rows || []) })
-      .catch(() => { if (active) setError('Your tracker could not load. Reload the page to try again.') })
+      .then(rows => { if (active) { setItems(rows || []); setError('') } })
+      .catch(() => { if (active) setError('Your tracker could not load.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
+  }, [token])
+
+  const retry = useCallback(() => {
+    if (!supabase) return
+    setLoading(true)
+    setToken(value => value + 1)
   }, [])
 
   const save = useCallback(async (opportunity) => {
@@ -94,5 +108,5 @@ export function useTracker() {
     }
   }, [])
 
-  return { items, loading, error, save, update, remove }
+  return { items, loading, error, retry, save, update, remove }
 }
