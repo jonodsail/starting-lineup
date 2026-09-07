@@ -224,6 +224,28 @@ export async function loadOpportunities() {
   return data.map(toOpportunity)
 }
 
+// Postings close without notice, so a role that has not been rechecked for a
+// while is the officer desk's problem before it is a member's. Thirty days is
+// the club's own recheck rhythm, not a property of the data.
+export const RECHECK_AFTER_DAYS = 30
+
+export function needsRecheck(verifiedOn, now = new Date()) {
+  if (!verifiedOn) return true
+  const verified = new Date(`${verifiedOn}T12:00:00`)
+  if (Number.isNaN(verified.getTime())) return true
+  return (now - verified) / 86400000 >= RECHECK_AFTER_DAYS
+}
+
+export async function markOpportunityVerified(opportunityId) {
+  if (!supabase) return
+  const today = new Date().toISOString().slice(0, 10)
+  const { error } = await supabase
+    .from('opportunities')
+    .update({ verified_on: today, updated_at: new Date().toISOString() })
+    .eq('id', opportunityId)
+  if (error) throw error
+}
+
 export async function submitOpportunity(draft) {
   if (!supabase) return { preview: true }
   const userId = await currentUserId()
@@ -242,6 +264,15 @@ export async function submitOpportunity(draft) {
   })
   if (error) throw error
   return { preview: false }
+}
+
+// Counts of two or more only. The threshold lives in the database function, so
+// the interface cannot widen it by accident.
+export async function loadOpportunityInterest() {
+  if (!supabase) return {}
+  const { data, error } = await supabase.rpc('opportunity_tracker_counts')
+  if (error) throw error
+  return Object.fromEntries((data || []).map(row => [row.opportunity_id, Number(row.tracker_count)]))
 }
 
 // ── Tracker ──────────────────────────────────────────────────────────────────
@@ -298,8 +329,8 @@ export async function removeTrackedOpportunity(opportunityId) {
 // ── Officer desk ─────────────────────────────────────────────────────────────
 
 export async function loadOfficerQueue() {
-  if (!supabase) return { alumni: [], opportunities: [], publishedCount: 0 }
-  const [alumniResult, opportunityResult, publishedResult] = await Promise.all([
+  if (!supabase) return { alumni: [], opportunities: [], stale: [], publishedCount: 0 }
+  const [alumniResult, opportunityResult, publishedResult, approvedResult] = await Promise.all([
     supabase
       .from('alumni_submissions')
       .select('id, full_name, hbs_class_year, company, title, linkedin_url, notes, created_at')
@@ -311,11 +342,18 @@ export async function loadOfficerQueue() {
       .eq('status', 'draft')
       .order('created_at', { ascending: false }),
     supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    supabase
+      .from('opportunities')
+      .select(OPPORTUNITY_COLUMNS)
+      .eq('status', 'approved')
+      .order('verified_on', { ascending: true, nullsFirst: true }),
   ])
   if (alumniResult.error) throw alumniResult.error
   if (opportunityResult.error) throw opportunityResult.error
   if (publishedResult.error) throw publishedResult.error
+  if (approvedResult.error) throw approvedResult.error
   return {
+    stale: approvedResult.data.map(toOpportunity).filter(role => needsRecheck(role.verifiedOn)),
     alumni: alumniResult.data.map(row => ({
       id: row.id,
       name: row.full_name,

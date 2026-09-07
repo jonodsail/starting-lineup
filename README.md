@@ -41,14 +41,17 @@ Vercel uses the rewrite in `vercel.json` so direct visits and authentication red
    every resume and the member roster, which is what the onboarding copy tells
    members. Withdrawing that access means removing the officer policies there
    and the sentence in `Onboarding.jsx` together.
-7. Run `supabase/seed-opportunities.sql`. It adds the `verified_on` column and
+7. Run `supabase/tracker-signal.sql`. It exposes how many members are tracking
+   each role, and only where that count is two or more. The threshold is
+   enforced in the function, not the interface.
+8. Run `supabase/seed-opportunities.sql`. It adds the `verified_on` column and
    publishes the pilot opportunity board. The board reads from the database, so
    until this runs the opportunities page is empty. The script is idempotent and
    uses fixed ids, so rerunning it refreshes the roles without detaching anyone's
    saved-role tracker.
-8. Add officer emails directly to `officer_accounts` through the protected SQL editor.
-9. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
-10. Add the same variables in the separate Vercel project.
+9. Add officer emails directly to `officer_accounts` through the protected SQL editor.
+10. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
+11. Add the same variables in the separate Vercel project.
 
 Membership is controlled by the `allowed_email_domains` table, which officers
 edit from the Member access section of the officer desk. Run
@@ -63,5 +66,14 @@ can read and replace only their own; club officers can read all of them, and
 onboarding says so where the file is chosen.
 
 The source alumni workbook is not committed, and no alumni names, employers, or profile URLs are bundled into this public repository. Import those records only into the private Supabase project. Future authorized emails belong in the protected `alumni_contacts` table and are available only to club officers.
+
+Officers recheck published roles from the Needs rechecking queue on the officer
+desk, which lists anything last verified more than 30 days ago. Marking a role
+still live stamps today's date; marking it closed expires it and members stop
+seeing it.
+
+Members see how many other members are tracking a role, and nothing else about
+them. Counts below two are withheld by the database function rather than by the
+interface.
 
 The opportunity records include a `verifiedOn` date and link to role-specific postings rather than general careers pages. Roles can close without notice, so officers should recheck every application path regularly and remove closed listings promptly.
