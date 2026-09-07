@@ -1,12 +1,13 @@
-import { BriefcaseBusiness, LayoutDashboard, Network, ShieldCheck, Target } from 'lucide-react'
+import { BriefcaseBusiness, Contact, LayoutDashboard, Network as NetworkIcon, ShieldCheck, Target } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 
 const navItems = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/opportunities', label: 'Opportunities', icon: BriefcaseBusiness },
-  { to: '/alumni', label: 'Alumni', icon: Network },
+  { to: '/alumni', label: 'Alumni', icon: NetworkIcon },
   { to: '/tracker', label: 'Tracker', icon: Target },
+  { to: '/network', label: 'Network', icon: Contact },
 ]
 
 export default function AppShell() {

@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { ArrowUpRight, Building2, Check, CheckCircle2, Link as LinkIcon, Search, Send, Users, X } from 'lucide-react'
+import { ArrowUpRight, Bookmark, Building2, Check, CheckCircle2, Link as LinkIcon, Search, Send, Users, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { EmptyState, ErrorNotice, PageHeader } from '../components/ui'
 import { ecosystemCompanyNames } from '../data/ecosystemCompanyNames'
@@ -7,6 +7,7 @@ import { opportunities } from '../data/opportunities'
 import { alumniSeed } from '../data/alumniSeed'
 import { canonicalizeOrganization, majorLeagueOrganizations, organizationSearchText, organizationsMatch } from '../data/organizationCatalog'
 import { loadAlumniDirectory, submitAlumniCandidate } from '../lib/db'
+import { useNetwork } from '../lib/hooks'
 
 const baseCompanyNames = [...new Set([
   ...ecosystemCompanyNames,
@@ -102,6 +103,7 @@ export default function Alumni() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [reloadToken, setReloadToken] = useState(0)
+  const { items: network, save: saveToNetwork, error: networkError } = useNetwork()
   const [showSubmission, setShowSubmission] = useState(false)
   const [submissionStatus, setSubmissionStatus] = useState('idle')
 
@@ -160,6 +162,8 @@ export default function Alumni() {
     return rightYear - leftYear || left.name.localeCompare(right.name)
   }), [alumni, peopleQuery, selectedCompany])
 
+  const savedIds = new Set(network.map(person => person.id))
+
   const linkedInUrl = selectedCompany
     ? `https://www.linkedin.com/school/harvard-business-school/people/?keywords=${encodeURIComponent(selectedCompany)}`
     : 'https://www.linkedin.com/school/harvard-business-school/people/'
@@ -177,6 +181,7 @@ export default function Alumni() {
     </section>
 
     {loadError && <div className="mt-6"><ErrorNotice onRetry={retryDirectory} retrying={loading}>{loadError}</ErrorNotice></div>}
+    {networkError && <div className="mt-6"><ErrorNotice>{networkError}</ErrorNotice></div>}
 
     {selectedCompany && <div className="mt-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-sm text-ink-muted"><strong className="text-night">{loading ? '—' : results.length}</strong> verified {results.length === 1 ? 'alumnus' : 'alumni'} at or related to <strong className="text-night">{selectedCompany}</strong></p></div><a href={linkedInUrl} target="_blank" rel="noreferrer" className="btn-secondary shrink-0">Search HBS alumni on LinkedIn <ArrowUpRight size={16} /></a></div>}
 
@@ -184,7 +189,8 @@ export default function Alumni() {
 
     {!loading && selectedCompany && results.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{results.map(person => {
       const linkedInUrl = person.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${person.name} ${person.company}`)}`
-      return <article key={person.id} className="panel p-5"><div className="flex items-start justify-between gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-night text-xs font-bold text-white">{person.name.split(' ').map(part => part[0]).join('').slice(0, 2)}</span>{person.classYear && <span className="tag">HBS ’{person.classYear.slice(-2)}</span>}</div><h2 className="mt-4 font-bold text-night">{person.name}</h2><p className="mt-1 text-sm leading-5 text-ink-muted">{person.title}</p><p className="mt-3 flex items-center gap-2 text-sm font-semibold text-ink"><Building2 size={15} className="text-crimson" />{person.company}</p><a href={linkedInUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0a66c2] hover:underline"><LinkIcon size={16} />{person.linkedinUrl ? 'View LinkedIn' : 'Search LinkedIn'} <ArrowUpRight size={14} /></a></article>
+      const saved = savedIds.has(person.id)
+      return <article key={person.id} className="panel flex flex-col p-5"><div className="flex items-start justify-between gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-night text-xs font-bold text-white">{person.name.split(' ').map(part => part[0]).join('').slice(0, 2)}</span>{person.classYear && <span className="tag">HBS ’{person.classYear.slice(-2)}</span>}</div><h2 className="mt-4 font-bold text-night">{person.name}</h2><p className="mt-1 text-sm leading-5 text-ink-muted">{person.title}</p><p className="mt-3 flex items-center gap-2 text-sm font-semibold text-ink"><Building2 size={15} className="text-crimson" />{person.company}</p><div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4"><button onClick={() => saveToNetwork(person)} disabled={saved} className={`inline-flex items-center gap-2 text-sm font-semibold ${saved ? 'cursor-default text-forest' : 'text-ink hover:text-crimson'}`}>{saved ? <Check size={16} /> : <Bookmark size={16} />}{saved ? 'In your network' : 'Save to network'}</button><a href={linkedInUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-[#0a66c2] hover:underline"><LinkIcon size={16} />{person.linkedinUrl ? 'View LinkedIn' : 'Search LinkedIn'} <ArrowUpRight size={14} /></a></div></article>
     })}</div>}
 
     {!loading && selectedCompany && results.length === 0 && <div className="mt-4"><EmptyState title={`No verified alumni at ${selectedCompany} yet`}>Use the LinkedIn search above to find HBS alumni, then flag strong matches for the club’s verified directory.</EmptyState></div>}

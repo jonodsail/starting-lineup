@@ -83,6 +83,59 @@ export async function removeAllowedDomain(domain) {
   if (error) throw error
 }
 
+// ── Network (saved alumni) ───────────────────────────────────────────────────
+
+const ALUMNI_COLUMNS = 'id, full_name, hbs_class_year, company, title, linkedin_url, verified_at'
+
+export async function loadNetwork() {
+  if (!supabase) return null
+  const userId = await currentUserId()
+  if (!userId) return []
+  const { data, error } = await supabase
+    .from('saved_alumni')
+    .select(`note, saved_at, alumnus:alumni(${ALUMNI_COLUMNS})`)
+    .eq('user_id', userId)
+    .order('saved_at', { ascending: false })
+  if (error) throw error
+  return data
+    .filter(row => row.alumnus)
+    .map(row => ({ ...toAlumnus(row.alumnus), note: row.note || '', savedAt: row.saved_at }))
+}
+
+export async function saveAlumnus(alumniId) {
+  if (!supabase) return
+  const userId = await currentUserId()
+  if (!userId) throw new Error('Sign in before saving someone.')
+  const { error } = await supabase
+    .from('saved_alumni')
+    .upsert({ user_id: userId, alumni_id: alumniId }, { onConflict: 'user_id,alumni_id', ignoreDuplicates: true })
+  if (error) throw error
+}
+
+export async function updateNetworkNote(alumniId, note) {
+  if (!supabase) return
+  const userId = await currentUserId()
+  if (!userId) throw new Error('Sign in before updating your network.')
+  const { error } = await supabase
+    .from('saved_alumni')
+    .update({ note })
+    .eq('user_id', userId)
+    .eq('alumni_id', alumniId)
+  if (error) throw error
+}
+
+export async function removeFromNetwork(alumniId) {
+  if (!supabase) return
+  const userId = await currentUserId()
+  if (!userId) throw new Error('Sign in before updating your network.')
+  const { error } = await supabase
+    .from('saved_alumni')
+    .delete()
+    .eq('user_id', userId)
+    .eq('alumni_id', alumniId)
+  if (error) throw error
+}
+
 // ── Member profile ───────────────────────────────────────────────────────────
 
 function toProfile(row) {
