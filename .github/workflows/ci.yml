@@ -36,6 +36,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test
+        run: npm test
+
       # The build needs no Supabase credentials: src/lib/supabase.js tolerates
       # missing environment values and the data layer falls back accordingly.
       - name: Build

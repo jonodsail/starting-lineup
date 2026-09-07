@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, ExternalLink, FileText, Inbox, KeyRound, Plus, Trash2, Users, X } from 'lucide-react'
+import { CalendarClock, Check, ExternalLink, FileText, Inbox, KeyRound, Plus, Trash2, Users, X } from 'lucide-react'
 import { EmptyState, ErrorNotice, PageHeader, Stat } from '../components/ui'
 import {
   addAllowedDomain,
@@ -7,6 +7,8 @@ import {
   loadAllowedDomains,
   loadMemberRoster,
   loadOfficerQueue,
+  markOpportunityVerified,
+  RECHECK_AFTER_DAYS,
   resumeDownloadUrl,
   rejectAlumniSubmission,
   removeAllowedDomain,
@@ -163,7 +165,7 @@ function MemberRoster() {
 }
 
 export default function Admin() {
-  const [queue, setQueue] = useState({ alumni: [], opportunities: [], publishedCount: 0 })
+  const [queue, setQueue] = useState({ alumni: [], opportunities: [], stale: [], publishedCount: 0 })
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState('')
@@ -203,7 +205,7 @@ export default function Admin() {
     <div className="grid gap-4 sm:grid-cols-3">
       <Stat value={loading ? '—' : pendingCount} label="Awaiting review" note="Member submissions" />
       <Stat value={loading ? '—' : queue.publishedCount} label="Published roles" note="Live on the board" />
-      <Stat value={loading ? '—' : queue.alumni.length} label="Alumni pending" note="Verify before publishing" />
+      <Stat value={loading ? '—' : queue.stale.length} label="Needs rechecking" note={`Verified over ${RECHECK_AFTER_DAYS} days ago`} />
     </div>
 
     <section className="mt-10">
@@ -245,6 +247,26 @@ export default function Admin() {
           </div>
         </div>
       </article>)}</div>}
+    </section>
+
+
+    <section className="mt-12">
+      <div className="flex items-center gap-2"><CalendarClock size={18} className="text-crimson" /><h2 className="font-display text-2xl font-bold text-night">Needs rechecking</h2></div>
+      <p className="mt-1 text-sm text-ink-muted">Published roles last verified more than {RECHECK_AFTER_DAYS} days ago. Open the posting. If it is still live, mark it verified. If it has closed, expire it so members stop seeing it.</p>
+      {loading && <div className="panel mt-4 px-6 py-10 text-center text-sm text-ink-muted">Loading the queue…</div>}
+      {!loading && queue.stale.length === 0 && <div className="mt-4"><EmptyState title="Everything is current">Every published role has been verified within the last {RECHECK_AFTER_DAYS} days.</EmptyState></div>}
+      {!loading && queue.stale.length > 0 && <div className="panel mt-4 divide-y divide-line">{queue.stale.map(role => <div key={role.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wider text-crimson">{role.company}</p>
+          <p className="mt-1 font-semibold text-night">{role.title}</p>
+          <p className="mt-1 text-xs text-ink-muted">{role.verifiedOn ? `Last verified ${formatSubmitted(role.verifiedOn)}` : 'Never verified'}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <a href={role.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-2 text-xs font-semibold text-night hover:border-night">Open posting <ExternalLink size={12} /></a>
+          <button disabled={busyId === role.id} onClick={() => act(role.id, () => setOpportunityStatus(role.id, 'expired'))} className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink-muted hover:border-crimson hover:text-crimson disabled:opacity-50"><X size={14} />Closed</button>
+          <button disabled={busyId === role.id} onClick={() => act(role.id, () => markOpportunityVerified(role.id))} className="inline-flex items-center gap-1 rounded-lg bg-night px-3 py-2 text-xs font-semibold text-white hover:bg-crimson disabled:opacity-50"><Check size={14} />{busyId === role.id ? 'Working…' : 'Still live'}</button>
+        </div>
+      </div>)}</div>}
     </section>
 
     <MemberRoster />

@@ -8,7 +8,7 @@ import { submitOpportunity } from '../lib/db'
 const TYPES = ['MBA Internship', 'Full-Time']
 
 export default function Opportunities() {
-  const { opportunities, loading, error, retry } = useOpportunities()
+  const { opportunities, interest, loading, error, retry } = useOpportunities()
   const { items: tracker, save, error: trackerError } = useTracker()
   const [query, setQuery] = useState('')
   const [type, setType] = useState('All')
@@ -86,7 +86,7 @@ export default function Opportunities() {
     {loading
       ? <div className="panel mt-4 px-6 py-12 text-center text-sm text-ink-muted">Loading the officer-curated board…</div>
       : <>
-        <div className="mt-4 grid gap-4 xl:grid-cols-2">{results.map(item => <OpportunityCard key={item.id} opportunity={item} saved={savedIds.has(item.id)} onSave={save} />)}</div>
+        <div className="mt-4 grid gap-4 xl:grid-cols-2">{results.map(item => <OpportunityCard key={item.id} opportunity={item} saved={savedIds.has(item.id)} onSave={save} trackedBy={interest[item.id] || 0} />)}</div>
         {results.length === 0 && <div className="mt-4"><EmptyState title={opportunities.length ? 'No roles match these filters' : 'No roles published yet'} /></div>}
       </>}
   </div>

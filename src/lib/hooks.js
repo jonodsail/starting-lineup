@@ -4,6 +4,7 @@ import { opportunities as bundledOpportunities } from '../data/opportunities'
 import { readTracker, writeTracker } from './tracker'
 import {
   loadOpportunities,
+  loadOpportunityInterest,
   loadTracker,
   removeTrackedOpportunity,
   saveTrackedOpportunity,
@@ -17,6 +18,7 @@ import {
 
 export function useOpportunities() {
   const [opportunities, setOpportunities] = useState(() => (supabase ? [] : bundledOpportunities))
+  const [interest, setInterest] = useState({})
   const [loading, setLoading] = useState(() => Boolean(supabase))
   const [error, setError] = useState('')
   const [token, setToken] = useState(0)
@@ -28,6 +30,11 @@ export function useOpportunities() {
       .then(rows => { if (active) { setOpportunities(rows || []); setError('') } })
       .catch(() => { if (active) setError('The opportunity board could not load.') })
       .finally(() => { if (active) setLoading(false) })
+    // Interest is decoration, not content: a failure here leaves the board
+    // fully usable, so it never sets the page error.
+    loadOpportunityInterest()
+      .then(counts => { if (active) setInterest(counts) })
+      .catch(() => {})
     return () => { active = false }
   }, [token])
 
@@ -37,7 +44,7 @@ export function useOpportunities() {
     setToken(value => value + 1)
   }, [])
 
-  return { opportunities, loading, error, retry }
+  return { opportunities, interest, loading, error, retry }
 }
 
 export function useTracker() {

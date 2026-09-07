@@ -40,7 +40,7 @@ function useAlumniCount() {
 
 export default function Dashboard() {
   const { profile } = useAuth()
-  const { opportunities, loading, error, retry } = useOpportunities()
+  const { opportunities, interest, loading, error, retry } = useOpportunities()
   const { items: tracker, save } = useTracker()
   const alumniCount = useAlumniCount()
 
@@ -67,7 +67,7 @@ export default function Dashboard() {
     <section className="mt-10"><div className="flex items-end justify-between gap-4"><div><p className="eyebrow">{showingFallback ? 'Newest on the board' : 'Your matched roles'}</p><h2 className="mt-2 font-display text-3xl font-bold text-night">Top roles</h2></div><Link to="/opportunities" className="hidden items-center gap-1 text-sm font-semibold text-night hover:text-crimson sm:flex">See all <ArrowRight size={15} /></Link></div>
       {loading
         ? <div className="panel mt-5 px-6 py-12 text-center text-sm text-ink-muted">Loading the board…</div>
-        : <div className="mt-5 grid gap-4 xl:grid-cols-3">{featured.map(item => <OpportunityCard key={item.id} opportunity={item} saved={savedIds.has(item.id)} onSave={save} />)}</div>}
+        : <div className="mt-5 grid gap-4 xl:grid-cols-3">{featured.map(item => <OpportunityCard key={item.id} opportunity={item} saved={savedIds.has(item.id)} onSave={save} trackedBy={interest[item.id] || 0} />)}</div>}
     </section>
 
     <section className="mt-10 grid gap-4 lg:grid-cols-2"><Link to="/alumni" className="panel group flex items-start gap-4 p-6 hover:border-crimson/30"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-crimson-soft text-crimson"><Network size={21} /></span><div><p className="font-semibold text-night">Find someone who knows the company</p><p className="mt-1 text-sm leading-6 text-ink-muted">Search the club’s verified HBS alumni by company and role.</p><span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-crimson">Open alumni search <ArrowRight size={14} /></span></div></Link><div className="panel flex items-start gap-4 p-6"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gold-soft text-gold"><CalendarDays size={21} /></span><div><p className="font-semibold text-night">Recommended next step:</p><p className="mt-1 text-sm leading-6 text-ink-muted">{nextStep}</p><span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-gold"><Sparkles size={14} /> Built for the HBS sports search</span></div></div></section>
