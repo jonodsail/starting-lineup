@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Check, ExternalLink, Inbox, KeyRound, Plus, Trash2, Users, X } from 'lucide-react'
+import { Check, ExternalLink, FileText, Inbox, KeyRound, Plus, Trash2, Users, X } from 'lucide-react'
 import { EmptyState, ErrorNotice, PageHeader, Stat } from '../components/ui'
 import {
   addAllowedDomain,
   approveAlumniSubmission,
   loadAllowedDomains,
+  loadMemberRoster,
   loadOfficerQueue,
+  resumeDownloadUrl,
   rejectAlumniSubmission,
   removeAllowedDomain,
   setOpportunityStatus,
@@ -101,6 +103,65 @@ function MemberAccess() {
   </section>
 }
 
+// Officers can read member profiles and resumes so they can match people to
+// roles by hand. Onboarding tells members this in plain words. Storage is
+// private, so each resume link is signed and short-lived rather than a URL
+// that would keep working if it were passed on.
+const RESUME_LINK_SECONDS = 900
+
+function MemberRoster() {
+  const [members, setMembers] = useState([])
+  const [links, setLinks] = useState({})
+  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return undefined
+    let active = true
+    loadMemberRoster()
+      .then(async rows => {
+        if (!active) return
+        setMembers(rows)
+        setError('')
+        const withResumes = rows.filter(row => row.resumePath)
+        const signed = await Promise.all(withResumes.map(row =>
+          resumeDownloadUrl(row.resumePath, RESUME_LINK_SECONDS).catch(() => null)))
+        if (!active) return
+        setLinks(Object.fromEntries(withResumes.map((row, index) => [row.id, signed[index]]).filter(pair => pair[1])))
+      })
+      .catch(() => { if (active) setError('The member list could not load.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [])
+
+  return <section className="mt-12">
+    <div className="flex items-center gap-2"><Users size={18} className="text-crimson" /><h2 className="font-display text-2xl font-bold text-night">Members</h2></div>
+    <p className="mt-1 text-sm text-ink-muted">Everyone who has completed orientation, with what they are looking for. Resume links expire after fifteen minutes; reload this page for a fresh one.</p>
+
+    {error && <div className="mt-4"><ErrorNotice>{error}</ErrorNotice></div>}
+    {loading && <div className="panel mt-4 px-6 py-10 text-center text-sm text-ink-muted">Loading the member list…</div>}
+    {!loading && members.length === 0 && <div className="mt-4"><EmptyState title="No members yet">Members appear here once they finish orientation.</EmptyState></div>}
+
+    {!loading && members.length > 0 && <div className="panel mt-4 divide-y divide-line">
+      {members.map(member => <div key={member.id} className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
+        <div className="min-w-0">
+          <p className="font-semibold text-night">{member.name} <span className="ml-1 text-xs font-normal text-ink-muted">{member.classYear}</span></p>
+          <p className="mt-0.5 text-xs text-ink-muted">{member.email}</p>
+          {member.careerStage && <p className="mt-1 text-xs font-medium text-ink">{member.careerStage}</p>}
+          {(member.functions.length > 0 || member.sectors.length > 0) && <div className="mt-2 flex flex-wrap gap-1.5">
+            {[...member.functions, ...member.sectors].map(tag => <span key={tag} className="tag">{tag}</span>)}
+          </div>}
+        </div>
+        {member.resumePath
+          ? (links[member.id]
+            ? <a href={links[member.id]} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-xs font-semibold text-night hover:border-night"><FileText size={14} />Open resume <ExternalLink size={12} /></a>
+            : <span className="shrink-0 text-xs text-ink-muted">Resume link unavailable</span>)
+          : <span className="shrink-0 text-xs text-ink-muted">No resume</span>}
+      </div>)}
+    </div>}
+  </section>
+}
+
 export default function Admin() {
   const [queue, setQueue] = useState({ alumni: [], opportunities: [], publishedCount: 0 })
   const [loading, setLoading] = useState(isSupabaseConfigured)
@@ -185,6 +246,8 @@ export default function Admin() {
         </div>
       </article>)}</div>}
     </section>
+
+    <MemberRoster />
 
     <MemberAccess />
   </div>

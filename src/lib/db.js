@@ -94,6 +94,7 @@ function toProfile(row) {
     functions: row.target_functions || [],
     sectors: row.target_sectors || [],
     locations: row.target_locations || [],
+    resumePath: row.resume_path || '',
     onboardingComplete: Boolean(row.full_name && row.hbs_class),
     updatedAt: row.updated_at,
   }
@@ -105,7 +106,7 @@ export async function loadMemberProfile() {
   if (!userId) return null
   const { data, error } = await supabase
     .from('member_profiles')
-    .select('full_name, hbs_class, career_stage, target_functions, target_sectors, target_locations, updated_at')
+    .select('full_name, hbs_class, career_stage, target_functions, target_sectors, target_locations, resume_path, updated_at')
     .eq('id', userId)
     .maybeSingle()
   if (error) throw error
@@ -127,12 +128,62 @@ export async function saveMemberProfile(profile, email) {
       target_functions: profile.functions || [],
       target_sectors: profile.sectors || [],
       target_locations: profile.locations || [],
+      resume_path: profile.resumePath || null,
       updated_at: new Date().toISOString(),
     })
-    .select('full_name, hbs_class, career_stage, target_functions, target_sectors, target_locations, updated_at')
+    .select('full_name, hbs_class, career_stage, target_functions, target_sectors, target_locations, resume_path, updated_at')
     .single()
   if (error) throw error
   return toProfile(data)
+}
+
+// ── Resumes ──────────────────────────────────────────────────────────────────
+
+const RESUME_BUCKET = 'resumes'
+
+// One file per member, at <user id>/resume.pdf. The path is what the storage
+// policies key off, so it is derived here rather than passed in.
+export async function uploadResume(file) {
+  if (!supabase) return null
+  const userId = await currentUserId()
+  if (!userId) throw new Error('Sign in before uploading a resume.')
+  const path = `${userId}/resume.pdf`
+  const { error } = await supabase.storage
+    .from(RESUME_BUCKET)
+    .upload(path, file, { upsert: true, contentType: 'application/pdf' })
+  if (error) throw error
+  return path
+}
+
+// Storage is private, so a member never gets a durable URL. This mints a link
+// that expires, which is also what officers use to open a resume.
+export async function resumeDownloadUrl(path, expiresInSeconds = 300) {
+  if (!supabase || !path) return null
+  const { data, error } = await supabase.storage
+    .from(RESUME_BUCKET)
+    .createSignedUrl(path, expiresInSeconds)
+  if (error) throw error
+  return data?.signedUrl || null
+}
+
+export async function loadMemberRoster() {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('member_profiles')
+    .select('id, full_name, email, hbs_class, career_stage, target_functions, target_sectors, resume_path, updated_at')
+    .order('full_name')
+  if (error) throw error
+  return data.map(row => ({
+    id: row.id,
+    name: row.full_name,
+    email: row.email,
+    classYear: row.hbs_class,
+    careerStage: row.career_stage || '',
+    functions: row.target_functions || [],
+    sectors: row.target_sectors || [],
+    resumePath: row.resume_path || '',
+    updatedAt: row.updated_at,
+  }))
 }
 
 // ── Opportunities ────────────────────────────────────────────────────────────

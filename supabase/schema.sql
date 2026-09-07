@@ -107,6 +107,9 @@ create policy "members read approved opportunities" on public.opportunities for 
 create policy "members submit drafts" on public.opportunities for insert with check (public.is_allowed_hbs_member() and submitted_by = auth.uid() and status = 'draft');
 create policy "officers manage opportunities" on public.opportunities for all using (public.is_club_officer()) with check (public.is_club_officer());
 create policy "members manage own profile" on public.member_profiles for all using (public.is_allowed_hbs_member() and id = auth.uid()) with check (public.is_allowed_hbs_member() and id = auth.uid() and lower(email) = lower(auth.jwt() ->> 'email'));
+-- Officers read member profiles so they can match members to roles; see
+-- supabase/resumes.sql, which also governs resume file access.
+create policy "officers read member profiles" on public.member_profiles for select using (public.is_club_officer());
 create policy "members manage own tracker" on public.saved_opportunities for all using (public.is_allowed_hbs_member() and user_id = auth.uid()) with check (public.is_allowed_hbs_member() and user_id = auth.uid());
 create policy "members read alumni" on public.alumni for select using (public.is_allowed_hbs_member());
 create policy "officers manage alumni" on public.alumni for all using (public.is_club_officer()) with check (public.is_club_officer());

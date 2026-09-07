@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, FileText, Upload } from 'lucide-react'
 import { useAuth } from '../lib/auth'
+import { uploadResume } from '../lib/db'
+import { isSupabaseConfigured } from '../lib/supabase'
 
 const FUNCTIONS = ['Strategy', 'Business Development', 'Partnerships', 'Finance', 'Investing', 'Marketing', 'Operations', 'Media Strategy', 'Product & Technology']
 const SECTORS = ['Teams & Venues', 'Leagues & Governing Bodies', 'Media & Content', 'Commerce & Consumer', 'Finance & Investing', 'Gaming & Interactive', 'Agencies & Talent']
@@ -19,16 +21,32 @@ export default function Onboarding() {
   const [form, setForm] = useState(profile || { name: member?.name || '', classYear: '', careerStage: '', functions: [], sectors: [], locations: [] })
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [resumeFile, setResumeFile] = useState(null)
+  const [resumeError, setResumeError] = useState('')
   const update = (key, value) => setForm(current => ({ ...current, [key]: value }))
   const canContinue = step === 0 ? form.name?.trim() && form.classYear : step === 1 ? form.functions?.length && form.sectors?.length : form.locations?.length
+  const chooseResume = (file) => {
+    setResumeError('')
+    if (!file) { setResumeFile(null); return }
+    if (file.type !== 'application/pdf') { setResumeError('Choose a PDF.'); return }
+    if (file.size > 5 * 1024 * 1024) { setResumeError('That file is over 5 MB. Choose a smaller PDF.'); return }
+    setResumeFile(file)
+  }
+
   const finish = async () => {
     setSaving(true)
     setSaveError('')
     try {
-      await saveProfile(form)
+      // The upload runs first so the saved profile carries its path. A failed
+      // upload stops the whole step rather than saving a profile that claims
+      // a resume it does not have.
+      const resumePath = resumeFile ? await uploadResume(resumeFile) : form.resumePath || null
+      await saveProfile({ ...form, resumePath })
       navigate('/dashboard', { replace: true })
     } catch {
-      setSaveError('Your orientation could not be saved. Please try again in a moment.')
+      setSaveError(resumeFile
+        ? 'Your resume could not be uploaded, so nothing was saved. Please try again in a moment.'
+        : 'Your orientation could not be saved. Please try again in a moment.')
       setSaving(false)
     }
   }
@@ -36,7 +54,7 @@ export default function Onboarding() {
     <div className="flex items-center justify-between"><div><p className="eyebrow">Member orientation</p><p className="mt-1 text-sm text-ink-muted">Set up your profile for better results.</p></div><p className="text-xs font-semibold text-ink-muted">{step + 1} / {steps.length}</p></div>
     <div className="mt-6 grid grid-cols-3 gap-2">{steps.map((label, index) => <div key={label}><div className={`h-1 rounded-full ${index <= step ? 'bg-crimson' : 'bg-line'}`} /><p className={`mt-2 text-xs ${index === step ? 'font-semibold text-night' : 'text-ink-muted'}`}>{label}</p></div>)}</div>
     <section className="panel mt-8 p-6 md:p-10">
-      {step === 0 && <div><h1 className="font-display text-4xl font-bold text-night">Welcome</h1><p className="mt-3 text-sm leading-6 text-ink-muted">Tell us your HBS class.</p><div className="mt-8 grid gap-5 sm:grid-cols-2"><label className="sm:col-span-2"><span className="label">Full name</span><input className="input" value={form.name} onChange={event => update('name', event.target.value)} placeholder="Your name" /></label><label><span className="label">HBS class</span><select className="input" value={form.classYear} onChange={event => update('classYear', event.target.value)}><option value="">Select RC or EC</option><option>RC</option><option>EC</option></select></label><label><span className="label">Search stage</span><select className="input" value={form.careerStage} onChange={event => update('careerStage', event.target.value)}><option value="">Select one</option><option>Exploring sports</option><option>Actively recruiting</option><option>Networking first</option><option>Committed, staying connected</option></select></label></div></div>}
+      {step === 0 && <div><h1 className="font-display text-4xl font-bold text-night">Welcome</h1><p className="mt-3 text-sm leading-6 text-ink-muted">Tell us your HBS class.</p><div className="mt-8 grid gap-5 sm:grid-cols-2"><label className="sm:col-span-2"><span className="label">Full name</span><input className="input" value={form.name} onChange={event => update('name', event.target.value)} placeholder="Your name" /></label><label><span className="label">HBS class</span><select className="input" value={form.classYear} onChange={event => update('classYear', event.target.value)}><option value="">Select RC or EC</option><option>RC</option><option>EC</option></select></label><label><span className="label">Search stage</span><select className="input" value={form.careerStage} onChange={event => update('careerStage', event.target.value)}><option value="">Select one</option><option>Exploring sports</option><option>Actively recruiting</option><option>Networking first</option><option>Committed, staying connected</option></select></label>{isSupabaseConfigured && <label className="sm:col-span-2"><span className="label">Resume <span className="font-normal text-ink-muted">(optional)</span></span><span className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-line bg-canvas px-4 py-4 text-sm text-ink-muted hover:border-ink/30">{resumeFile || form.resumePath ? <FileText size={17} /> : <Upload size={17} />}<span>{resumeFile?.name || (form.resumePath ? 'Resume on file. Choose a PDF to replace it.' : 'Add a PDF resume')}</span><input type="file" accept="application/pdf" className="sr-only" onChange={event => chooseResume(event.target.files?.[0] || null)} /></span><span className="mt-1 block text-xs text-ink-muted">Club officers can open your resume to match you with roles. PDF, up to 5 MB.</span>{resumeError && <span className="mt-1 block text-xs font-medium text-crimson">{resumeError}</span>}</label>}</div></div>}
       {step === 1 && <div><h1 className="font-display text-4xl font-bold text-night">What types of jobs are you interested in?</h1><p className="mt-3 text-sm leading-6 text-ink-muted">Pick the corners of the sports ecosystem you want to prioritize.</p><div className="mt-8"><p className="label">Target functions</p><MultiSelect options={FUNCTIONS} selected={form.functions || []} onChange={value => update('functions', value)} /></div><div className="mt-7"><p className="label">Target sectors</p><MultiSelect options={SECTORS} selected={form.sectors || []} onChange={value => update('sectors', value)} /></div></div>}
       {step === 2 && <div><h1 className="font-display text-4xl font-bold text-night">Where can the search take you?</h1><p className="mt-3 text-sm leading-6 text-ink-muted">Choose all that apply. You can update this at any time.</p><div className="mt-8"><p className="label">Preferred locations</p><MultiSelect options={LOCATIONS} selected={form.locations || []} onChange={value => update('locations', value)} /></div></div>}
       <div className="mt-10 flex justify-between border-t border-line pt-6"><button disabled={step === 0} onClick={() => setStep(value => value - 1)} className="inline-flex items-center gap-2 text-sm font-semibold text-ink-muted disabled:invisible"><ArrowLeft size={16} />Back</button><button disabled={!canContinue || saving} onClick={() => step === steps.length - 1 ? finish() : setStep(value => value + 1)} className="btn-primary disabled:cursor-not-allowed disabled:opacity-35">{step === steps.length - 1 ? (saving ? 'Saving…' : 'Enter') : 'Continue'}<ArrowRight size={16} /></button></div>
