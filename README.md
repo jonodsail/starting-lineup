@@ -10,6 +10,7 @@ A private sports-career resource built for the HBS Business of Sports Club. The 
 - RC/EC member orientation and career preferences
 - Officer-curated MBA internships and full-time opportunities
 - Personal saved-role pipeline
+- A personal Network list of saved alumni with private notes
 - Alumni search interface backed by a private, officer-managed directory
 - Officer approval queue for member-submitted roles
 
@@ -44,14 +45,15 @@ Vercel uses the rewrite in `vercel.json` so direct visits and authentication red
 7. Run `supabase/tracker-signal.sql`. It exposes how many members are tracking
    each role, and only where that count is two or more. The threshold is
    enforced in the function, not the interface.
-8. Run `supabase/seed-opportunities.sql`. It adds the `verified_on` column and
+8. Run `supabase/saved-alumni.sql`. It creates the per-member network list.
+9. Run `supabase/seed-opportunities.sql`. It adds the `verified_on` column and
    publishes the pilot opportunity board. The board reads from the database, so
    until this runs the opportunities page is empty. The script is idempotent and
    uses fixed ids, so rerunning it refreshes the roles without detaching anyone's
    saved-role tracker.
-9. Add officer emails directly to `officer_accounts` through the protected SQL editor.
-10. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
-11. Add the same variables in the separate Vercel project.
+10. Add officer emails directly to `officer_accounts` through the protected SQL editor.
+11. Copy `.env.example` to `.env.local` and fill in the project URL and anon key.
+12. Add the same variables in the separate Vercel project.
 
 Membership is controlled by the `allowed_email_domains` table, which officers
 edit from the Member access section of the officer desk. Run
@@ -71,6 +73,10 @@ Officers recheck published roles from the Needs rechecking queue on the officer
 desk, which lists anything last verified more than 30 days ago. Marking a role
 still live stamps today's date; marking it closed expires it and members stop
 seeing it.
+
+A member's saved alumni are private and never aggregated. Alumni are real
+people who did not ask to be counted, so unlike roles there is no signal about
+how many members have saved or contacted someone.
 
 Members see how many other members are tracking a role, and nothing else about
 them. Counts below two are withheld by the database function rather than by the

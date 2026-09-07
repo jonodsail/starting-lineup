@@ -72,6 +72,13 @@ create table public.alumni (
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
+create table public.saved_alumni (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  alumni_id uuid not null references public.alumni(id) on delete cascade,
+  note text not null default '', saved_at timestamptz not null default now(),
+  primary key (user_id, alumni_id)
+);
+
 create table public.alumni_contacts (
   alumni_id uuid primary key references public.alumni(id) on delete cascade,
   authorized_email text not null,
@@ -100,6 +107,7 @@ alter table public.member_profiles enable row level security;
 alter table public.opportunities enable row level security;
 alter table public.saved_opportunities enable row level security;
 alter table public.alumni enable row level security;
+alter table public.saved_alumni enable row level security;
 alter table public.alumni_contacts enable row level security;
 alter table public.alumni_submissions enable row level security;
 
@@ -112,6 +120,7 @@ create policy "members manage own profile" on public.member_profiles for all usi
 create policy "officers read member profiles" on public.member_profiles for select using (public.is_club_officer());
 create policy "members manage own tracker" on public.saved_opportunities for all using (public.is_allowed_hbs_member() and user_id = auth.uid()) with check (public.is_allowed_hbs_member() and user_id = auth.uid());
 create policy "members read alumni" on public.alumni for select using (public.is_allowed_hbs_member());
+create policy "members manage own network" on public.saved_alumni for all using (public.is_allowed_hbs_member() and user_id = auth.uid()) with check (public.is_allowed_hbs_member() and user_id = auth.uid());
 create policy "officers manage alumni" on public.alumni for all using (public.is_club_officer()) with check (public.is_club_officer());
 create policy "officers manage alumni contacts" on public.alumni_contacts for all using (public.is_club_officer()) with check (public.is_club_officer());
 create policy "members submit alumni candidates" on public.alumni_submissions for insert with check (public.is_allowed_hbs_member() and submitted_by = auth.uid() and status = 'pending');

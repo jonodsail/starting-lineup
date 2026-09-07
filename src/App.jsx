@@ -9,6 +9,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Opportunities = lazy(() => import('./pages/Opportunities'))
 const Alumni = lazy(() => import('./pages/Alumni'))
 const Tracker = lazy(() => import('./pages/Tracker'))
+const Network = lazy(() => import('./pages/Network'))
 const Admin = lazy(() => import('./pages/Admin'))
 
 function ScrollToTop() {
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="/opportunities" element={<Opportunities />} />
             <Route path="/alumni" element={<Alumni />} />
             <Route path="/tracker" element={<Tracker />} />
+            <Route path="/network" element={<Network />} />
             <Route path="/admin" element={<OfficerRoute />} />
           </Route>
         </Route>
