@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { ArrowUpRight, Building2, Check, CheckCircle2, Link as LinkIcon, Search, Send, Users, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
-import { EmptyState, PageHeader } from '../components/ui'
+import { EmptyState, ErrorNotice, PageHeader } from '../components/ui'
 import { ecosystemCompanyNames } from '../data/ecosystemCompanyNames'
 import { opportunities } from '../data/opportunities'
 import { alumniSeed } from '../data/alumniSeed'
@@ -101,6 +101,7 @@ export default function Alumni() {
   const [alumni, setAlumni] = useState(alumniSeed)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [reloadToken, setReloadToken] = useState(0)
   const [showSubmission, setShowSubmission] = useState(false)
   const [submissionStatus, setSubmissionStatus] = useState('idle')
 
@@ -112,11 +113,16 @@ export default function Alumni() {
   useEffect(() => {
     let active = true
     loadAlumniDirectory()
-      .then(records => { if (active) setAlumni(records.length ? records : alumniSeed) })
-      .catch(() => { if (active) setLoadError('The alumni directory could not load. Reload the page to try again.') })
+      .then(records => { if (active) { setAlumni(records.length ? records : alumniSeed); setLoadError('') } })
+      .catch(() => { if (active) setLoadError('The alumni directory could not load.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [])
+  }, [reloadToken])
+
+  const retryDirectory = () => {
+    setLoading(true)
+    setReloadToken(value => value + 1)
+  }
 
   const selectCompany = (company) => {
     setSearchParams(company ? { company } : {}, { replace: true })
@@ -170,7 +176,9 @@ export default function Alumni() {
       {selectedCompany && <label className="relative mt-4 block"><span className="sr-only">Filter alumni by name or role</span><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" size={17} /><input className="input pl-10" value={peopleQuery} onChange={event => setPeopleQuery(event.target.value)} placeholder={`Filter people at ${selectedCompany} by name or role`} /></label>}
     </section>
 
-    {selectedCompany && <div className="mt-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-sm text-ink-muted"><strong className="text-night">{loading ? '—' : results.length}</strong> verified {results.length === 1 ? 'alumnus' : 'alumni'} at or related to <strong className="text-night">{selectedCompany}</strong></p>{loadError && <p className="mt-1 text-xs font-medium text-crimson">{loadError}</p>}</div><a href={linkedInUrl} target="_blank" rel="noreferrer" className="btn-secondary shrink-0">Search HBS alumni on LinkedIn <ArrowUpRight size={16} /></a></div>}
+    {loadError && <div className="mt-6"><ErrorNotice onRetry={retryDirectory} retrying={loading}>{loadError}</ErrorNotice></div>}
+
+    {selectedCompany && <div className="mt-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-sm text-ink-muted"><strong className="text-night">{loading ? '—' : results.length}</strong> verified {results.length === 1 ? 'alumnus' : 'alumni'} at or related to <strong className="text-night">{selectedCompany}</strong></p></div><a href={linkedInUrl} target="_blank" rel="noreferrer" className="btn-secondary shrink-0">Search HBS alumni on LinkedIn <ArrowUpRight size={16} /></a></div>}
 
     {loading && selectedCompany && <div className="mt-4 panel px-6 py-12 text-center text-sm text-ink-muted">Searching the private HBS alumni directory…</div>}
 

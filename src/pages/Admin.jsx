@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Check, ExternalLink, Inbox, KeyRound, Plus, Trash2, Users, X } from 'lucide-react'
-import { EmptyState, PageHeader, Stat } from '../components/ui'
+import { EmptyState, ErrorNotice, PageHeader, Stat } from '../components/ui'
 import {
   addAllowedDomain,
   approveAlumniSubmission,
@@ -72,7 +72,7 @@ function MemberAccess() {
     <div className="flex items-center gap-2"><KeyRound size={18} className="text-crimson" /><h2 className="font-display text-2xl font-bold text-night">Member access</h2></div>
     <p className="mt-1 text-sm text-ink-muted">Anyone with an email on this list can sign in. Add the incoming class each September, and remove a class once it should no longer have access.</p>
 
-    {error && <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error}</div>}
+    {error && <div className="mt-4"><ErrorNotice onRetry={() => setToken(value => value + 1)}>{error}</ErrorNotice></div>}
     {loading && <div className="panel mt-4 px-6 py-10 text-center text-sm text-ink-muted">Loading the domain list…</div>}
 
     {!loading && <div className="panel mt-4 divide-y divide-line">
@@ -137,7 +137,7 @@ export default function Admin() {
     <PageHeader eyebrow="Club officers only" title="Officer desk" description="Review member submissions, protect the quality bar, and publish only verified records." />
 
     {!isSupabaseConfigured && <div className="mb-5 rounded-xl border border-line bg-cream px-4 py-3 text-sm text-ink-muted">Connect the project environment values to use it.</div>}
-    {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error}</div>}
+    {error && <div className="mb-5"><ErrorNotice onRetry={() => { setLoading(true); setRefreshToken(value => value + 1) }} retrying={loading}>{error}</ErrorNotice></div>}
 
     <div className="grid gap-4 sm:grid-cols-3">
       <Stat value={loading ? '—' : pendingCount} label="Awaiting review" note="Member submissions" />

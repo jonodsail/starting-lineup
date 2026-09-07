@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, BriefcaseBusiness, CalendarDays, Network, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { OpportunityCard, Stat } from '../components/ui'
+import { ErrorNotice, OpportunityCard, Stat } from '../components/ui'
 import { useAuth } from '../lib/auth'
 import { useOpportunities, useTracker } from '../lib/hooks'
 import { countAlumni } from '../lib/db'
@@ -40,7 +40,7 @@ function useAlumniCount() {
 
 export default function Dashboard() {
   const { profile } = useAuth()
-  const { opportunities, loading, error } = useOpportunities()
+  const { opportunities, loading, error, retry } = useOpportunities()
   const { items: tracker, save } = useTracker()
   const alumniCount = useAlumniCount()
 
@@ -62,7 +62,7 @@ export default function Dashboard() {
       <Stat value={tracker.length} label="Roles in your tracker" note="Saved through offer" />
     </div>
 
-    {error && <div role="alert" className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-crimson">{error}</div>}
+    {error && <div className="mt-6"><ErrorNotice onRetry={retry} retrying={loading}>{error}</ErrorNotice></div>}
 
     <section className="mt-10"><div className="flex items-end justify-between gap-4"><div><p className="eyebrow">{showingFallback ? 'Newest on the board' : 'Your matched roles'}</p><h2 className="mt-2 font-display text-3xl font-bold text-night">Top roles</h2></div><Link to="/opportunities" className="hidden items-center gap-1 text-sm font-semibold text-night hover:text-crimson sm:flex">See all <ArrowRight size={15} /></Link></div>
       {loading
