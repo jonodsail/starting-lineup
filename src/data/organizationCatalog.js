@@ -70,7 +70,7 @@ const leagueOrganizations = {
 export const majorLeagueOrganizations = Object.values(leagueOrganizations).flat()
 
 const aliasGroups = [
-  ['Prime Video & Amazon MGM Studios', 'Prime Video', 'Amazon Prime Video', 'Amazon Prime Video Sports', 'Amazon MGM Studios'],
+  ['Prime Video & Amazon MGM Studios', 'Prime Video', 'Amazon Prime Video', 'Amazon Prime Video Sports', 'Prime Video Sports', 'Amazon MGM Studios'],
   ['Arctos Partners', 'Arctos'],
   ['CAA Sports', 'Creative Artists Agency', 'CAA'],
   ['Madison Square Garden Sports', 'MSG Sports', 'Madison Square Garden Sports Corp'],
@@ -101,10 +101,42 @@ export function canonicalizeOrganization(value = '') {
   return aliasLookup.get(normalizeOrganization(value)) || value.trim()
 }
 
+// Legal-entity endings only. Words that can change which organization is meant
+// — Group, Holdings, Sports, Ventures — are deliberately not here.
+const LEGAL_SUFFIXES = new Set([
+  'inc', 'incorporated', 'llc', 'ltd', 'limited', 'corp', 'corporation',
+  'plc', 'lp', 'llp', 'co', 'company', 'gmbh', 'ag', 'sa', 'nv', 'bv', 'pty',
+])
+
+function organizationTokens(value = '') {
+  const tokens = canonicalizeOrganization(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+  while (tokens.length > 1 && LEGAL_SUFFIXES.has(tokens[tokens.length - 1])) tokens.pop()
+  return tokens
+}
+
 export function organizationsMatch(left, right) {
-  const a = normalizeOrganization(canonicalizeOrganization(left))
-  const b = normalizeOrganization(canonicalizeOrganization(right))
-  return a === b || (Math.min(a.length, b.length) > 5 && (a.includes(b) || b.includes(a)))
+  const a = organizationTokens(left)
+  const b = organizationTokens(right)
+  if (!a.length || !b.length) return false
+  if (a.length === b.length) return a.every((token, index) => token === b[index])
+
+  // One name may extend the other from the front — "Prime Video" and "Prime
+  // Video Sports" are the same employer. A merely shared ending is not a
+  // match: "Stanford Athletics" is not the Athletics, and "Yankees
+  // Entertainment and Sports Network" is not the New York Yankees. Comparing
+  // whole words also stops a substring from spanning a word boundary.
+  const [shorter, longer] = a.length < b.length ? [a, b] : [b, a]
+
+  // A single word is too weak a signal to absorb a longer name, and the alias
+  // groups above already cover the cases where it should.
+  if (shorter.length < 2) return false
+
+  return shorter.every((token, index) => token === longer[index])
 }
 
 export function organizationSearchText(value = '') {
